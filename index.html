@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OH Research Experiments</title>
+<style>
+:root{
+  --bg:#f4efe5;
+  --paper:#fffaf2;
+  --ink:#1f2937;
+  --muted:#6b7280;
+  --line:rgba(31,41,55,.12);
+  --accent:#c2410c;
+  --accent-soft:#fed7aa;
+  --accent-2:#0f766e;
+  --shadow:0 20px 45px rgba(31,41,55,.12);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  min-height:100vh;
+  font-family:"Pretendard Variable","SUIT Variable","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  color:var(--ink);
+  background:
+    radial-gradient(circle at top left, rgba(194,65,12,.16), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(15,118,110,.18), transparent 28%),
+    linear-gradient(135deg, #f5efe4 0%, #efe7d6 100%);
+}
+a{color:inherit;}
+.page{
+  width:min(1120px, calc(100% - 32px));
+  margin:0 auto;
+  padding:48px 0 56px;
+}
+.hero{
+  position:relative;
+  overflow:hidden;
+  background:rgba(255,250,242,.82);
+  border:1px solid rgba(255,255,255,.7);
+  border-radius:28px;
+  padding:38px 32px 34px;
+  box-shadow:var(--shadow);
+  backdrop-filter:blur(10px);
+}
+.hero::after{
+  content:"";
+  position:absolute;
+  right:-70px;
+  top:-70px;
+  width:220px;
+  height:220px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(194,65,12,.18), rgba(194,65,12,0));
+}
+.eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 12px;
+  border-radius:999px;
+  background:rgba(255,255,255,.72);
+  border:1px solid var(--line);
+  font-size:13px;
+  font-weight:700;
+  color:var(--accent);
+}
+h1{
+  margin:18px 0 10px;
+  font-size:clamp(34px, 6vw, 68px);
+  line-height:.98;
+  letter-spacing:-.04em;
+}
+.lead{
+  max-width:680px;
+  margin:0;
+  font-size:18px;
+  line-height:1.7;
+  color:#374151;
+}
+.meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:22px;
+}
+.meta span{
+  padding:8px 12px;
+  border-radius:999px;
+  background:rgba(255,255,255,.76);
+  border:1px solid var(--line);
+  font-size:13px;
+  color:var(--muted);
+}
+.labs{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:18px;
+  margin-top:22px;
+}
+.card{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  padding:24px;
+  background:rgba(255,250,242,.86);
+  border:1px solid rgba(255,255,255,.72);
+  border-radius:24px;
+  box-shadow:var(--shadow);
+  backdrop-filter:blur(10px);
+}
+.card-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+}
+.card-kicker{
+  display:inline-block;
+  margin-bottom:10px;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--accent-2);
+}
+.card h2{
+  margin:0;
+  font-size:28px;
+  letter-spacing:-.03em;
+}
+.badge{
+  min-width:52px;
+  height:52px;
+  display:grid;
+  place-items:center;
+  border-radius:18px;
+  background:linear-gradient(135deg, var(--accent-soft), #fff);
+  font-size:24px;
+}
+.card p{
+  margin:0;
+  color:#4b5563;
+  line-height:1.7;
+}
+.features{
+  margin:0;
+  padding:0;
+  list-style:none;
+  display:grid;
+  gap:10px;
+}
+.features li{
+  padding:12px 14px;
+  border-radius:16px;
+  background:rgba(255,255,255,.62);
+  border:1px solid var(--line);
+  font-size:14px;
+  line-height:1.5;
+}
+.actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:auto;
+}
+.button{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:48px;
+  padding:0 18px;
+  border-radius:999px;
+  text-decoration:none;
+  font-weight:800;
+  transition:transform .16s ease, box-shadow .16s ease, background .16s ease;
+}
+.button:hover{
+  transform:translateY(-1px);
+}
+.button-primary{
+  background:var(--accent);
+  color:#fffaf2;
+  box-shadow:0 12px 24px rgba(194,65,12,.22);
+}
+.button-secondary{
+  background:rgba(255,255,255,.72);
+  color:var(--ink);
+  border:1px solid var(--line);
+}
+.footer-note{
+  margin-top:20px;
+  padding:20px 22px;
+  border-radius:22px;
+  background:rgba(31,41,55,.92);
+  color:#e5e7eb;
+  box-shadow:var(--shadow);
+}
+.footer-note p{
+  margin:0 0 8px;
+  line-height:1.7;
+}
+.footer-note p:last-child{margin-bottom:0;}
+code{
+  font-family:"SFMono-Regular","Menlo","Consolas",monospace;
+  font-size:.95em;
+  background:rgba(255,255,255,.12);
+  padding:2px 7px;
+  border-radius:8px;
+}
+@media (max-width: 860px){
+  .page{width:min(100% - 24px, 1120px);padding:24px 0 32px;}
+  .hero{padding:26px 20px 22px;border-radius:24px;}
+  .labs{grid-template-columns:1fr;}
+  .card{padding:20px;}
+  h1{font-size:40px;}
+  .lead{font-size:16px;}
+}
+</style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <span class="eyebrow">OH Research · Browser Experiments</span>
+      <h1>실험 페이지<br>진입 허브</h1>
+      <p class="lead">
+        <code>Experiments</code> 저장소의 단일 HTML 실험 두 개를 이 GitHub Pages 저장소로 옮겨
+        바로 열 수 있게 구성했습니다. 아래에서 원하는 실험을 선택하면 됩니다.
+      </p>
+      <div class="meta">
+        <span>정적 파일만으로 실행</span>
+        <span>GitHub Pages 배포 가능</span>
+        <span>모바일 대응 포함</span>
+      </div>
+    </section>
+
+    <section class="labs" aria-label="실험 목록">
+      <article class="card">
+        <div class="card-head">
+          <div>
+            <span class="card-kicker">Interactive Lab</span>
+            <h2>대포 실험실</h2>
+          </div>
+          <div class="badge" aria-hidden="true">🔫</div>
+        </div>
+        <p>발사 시간과 거리의 관계를 직접 관찰하면서 데이터와 좌표평면을 함께 보는 실험입니다.</p>
+        <ul class="features">
+          <li>스페이스바 또는 숫자 입력으로 발사</li>
+          <li>데이터 테이블과 그래프를 동시에 확인</li>
+          <li>교사 설정으로 선형, 2차, 제곱근 관계식 전환</li>
+        </ul>
+        <div class="actions">
+          <a class="button button-primary" href="./cannon_lab.html">실험 시작</a>
+          <a class="button button-secondary" href="./cannon_lab.html" target="_blank" rel="noopener">새 탭에서 열기</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <div>
+            <span class="card-kicker">Pattern Fitting</span>
+            <h2>규칙 맞추기 실험실</h2>
+          </div>
+          <div class="badge" aria-hidden="true">📈</div>
+        </div>
+        <p>좌표 데이터를 보고 1차식 또는 2차식 규칙을 추정해보는 피팅 실험입니다.</p>
+        <ul class="features">
+          <li>점 데이터를 수동 입력하거나 URL 파라미터로 전달</li>
+          <li>오차 점수와 시행 기록으로 추정 과정 추적</li>
+          <li>힌트와 잠금 옵션을 활용한 수업용 운용 가능</li>
+        </ul>
+        <div class="actions">
+          <a class="button button-primary" href="./fitting_lab.html">실험 시작</a>
+          <a class="button button-secondary" href="./fitting_lab.html" target="_blank" rel="noopener">새 탭에서 열기</a>
+        </div>
+      </article>
+    </section>
+
+    <section class="footer-note">
+      <p>로컬에서 바로 확인하려면 이 폴더에서 <code>python3 -m http.server 8000</code> 실행 후 <code>http://127.0.0.1:8000</code> 로 접속하면 됩니다.</p>
+      <p>각 실험 페이지 상단에는 다시 이 홈으로 돌아오는 링크도 추가했습니다.</p>
+    </section>
+  </main>
+</body>
+</html>
