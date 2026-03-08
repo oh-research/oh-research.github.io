@@ -44,14 +44,17 @@ body{
 .panel:last-child{border-right:none;}
 .panel-header{padding:10px 14px;background:rgba(0,0,0,.2);font-family:'Jua',sans-serif;font-size:15px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;}
 .panel-title-with-icon{display:inline-flex;align-items:center;gap:8px;}
-.panel-title-with-icon svg{width:18px;height:18px;display:block;flex:none;}
+.panel-title-with-icon svg{width:24px;height:24px;display:block;flex:none;}
 .panel-subheader{padding:9px 14px;border-bottom:1px solid var(--border);background:rgba(15,23,42,.5);flex-shrink:0;}
 .panel-body{flex:1;overflow:hidden;position:relative;}
 
 /* Cannon Canvas */
 #cannonCanvas{width:100%;height:100%;display:block;}
-.formula-overlay{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:4;max-width:calc(100% - 24px);padding:5px 14px;border-radius:8px;background:rgba(0,0,0,.6);font-family:'Jua',sans-serif;font-size:14px;color:var(--accent2);pointer-events:none;white-space:nowrap;box-shadow:0 10px 24px rgba(2,6,23,.26);}
+.formula-overlay{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:4;max-width:calc(100% - 24px);padding:5px 14px;border-radius:8px;background:rgba(0,0,0,.6);font-family:'Jua',sans-serif;font-size:14px;color:var(--accent2);pointer-events:auto;white-space:nowrap;box-shadow:0 10px 24px rgba(2,6,23,.26);}
 .formula-overlay .param-em{color:var(--accent);}
+.formula-param{display:inline-flex;align-items:center;min-width:18px;padding:0 2px;border-bottom:1px dashed rgba(245,158,11,.35);cursor:text;}
+.formula-param:hover{color:#fde68a;}
+.formula-param-input{width:64px;padding:2px 6px;border:1px solid rgba(59,130,246,.45);border-radius:6px;background:rgba(15,23,42,.96);color:#fff;font-family:'Jua',sans-serif;font-size:14px;text-align:center;outline:none;box-shadow:0 0 0 2px rgba(59,130,246,.18);}
 .speed-control{display:flex;align-items:center;gap:12px;}
 .speed-control-label{font-size:12px;color:var(--muted);font-weight:700;white-space:nowrap;}
 .speed-slider{flex:1;accent-color:var(--accent2);cursor:pointer;}
@@ -60,6 +63,7 @@ body{
 /* Data Table */
 .table-wrap{flex:1;overflow-y:auto;padding:8px;}
 .data-table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:13px;}
+.data-table tbody tr{cursor:pointer;}
 .data-table th{color:var(--muted);font-weight:400;padding:6px 8px;border-bottom:1px solid var(--border);text-align:center;font-size:12px;position:sticky;top:0;background:var(--panel);}
 .data-table td{padding:6px 8px;text-align:center;border-bottom:1px solid rgba(51,65,85,.3);}
 .data-table tr.new-row{animation:flashIn .5s;}
@@ -90,6 +94,8 @@ body{
 .auto-cancel-btn{padding:7px 12px;background:rgba(71,85,105,.92);color:#fff;border:none;border-radius:999px;cursor:pointer;font-family:'Jua',sans-serif;font-size:13px;}
 .auto-cancel-btn:hover{background:#64748b;}
 .auto-cancel-btn:disabled{opacity:.45;cursor:default;}
+.reset-btn{padding:7px 12px;background:rgba(239,68,68,.92);color:#fff;border:none;border-radius:999px;cursor:pointer;font-family:'Jua',sans-serif;font-size:13px;}
+.reset-btn:hover{background:#dc2626;}
 
 /* Power Bar */
 .power-bar-wrap{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);width:200px;height:24px;background:var(--bg);border-radius:12px;border:2px solid var(--border);overflow:visible;display:none;z-index:10;}
@@ -159,7 +165,7 @@ body{
     <div class="panel-subheader">
       <div class="speed-control">
         <span class="speed-control-label">속도 조절</span>
-        <input class="speed-slider" id="speedSlider" type="range" min="0.5" max="3" step="0.1" value="1">
+        <input class="speed-slider" id="speedSlider" type="range" min="1" max="3" step="0.1" value="1">
         <span class="speed-value" id="speedValue">보통 1.0x</span>
       </div>
     </div>
@@ -180,6 +186,7 @@ body{
         </div>
         <button class="auto-btn" id="autoBtn" onclick="toggleAutoFire()">자동 발사</button>
         <button class="auto-cancel-btn" id="autoCancelBtn" onclick="cancelAutoFire()" disabled>취소</button>
+        <button class="reset-btn" onclick="resetExperiment()">초기화</button>
       </div>
     </div>
   </div>
@@ -272,12 +279,17 @@ const graphCanvas = document.getElementById('graphCanvas');
 const graphCtx = graphCanvas.getContext('2d');
 const graphTooltip = document.getElementById('graphTooltip');
 const graphTooltipValue = document.getElementById('graphTooltipValue');
+const formulaOverlay = document.getElementById('formulaOverlay');
 const speedSlider = document.getElementById('speedSlider');
 const speedValue = document.getElementById('speedValue');
 const autoCountInput = document.getElementById('autoCountInput');
 const autoCancelBtn = document.getElementById('autoCancelBtn');
+const dataBody = document.getElementById('dataBody');
 let graphHitPoints = [];
 let hoveredGraphPointId = null;
+let selectedTablePointId = null;
+let editingFormulaParam = null;
+let formulaParamDraft = '';
 
 // ══════════════ SEEDED RANDOM ══════════════
 function seededRandom(seed) {
@@ -288,17 +300,73 @@ function seededRandom(seed) {
   return h / 4294967296;
 }
 
+function calcBaseDistanceValue(x) {
+  if (funcType === 'linear') return paramA * x + paramB;
+  if (funcType === 'quadratic') return paramA * x * x + paramB * x + paramC;
+  return paramA * Math.sqrt(Math.max(0, x)) + paramB;
+}
+
 function calcDistance(x) {
-  let base;
-  if (funcType === 'linear') base = paramA * x + paramB;
-  else if (funcType === 'quadratic') base = paramA * x * x + paramB * x + paramC;
-  else base = paramA * Math.sqrt(Math.max(0, x)) + paramB;
+  const base = calcBaseDistanceValue(x);
 
   if (noiseLevel === 0) return Math.round(base * 10) / 10;
 
   const seed = Math.round(x * 100);
   const noise = (seededRandom(seed) - 0.5) * 2 * noiseLevel;
   return Math.round((base + noise) * 10) / 10;
+}
+
+function getReachDistanceRange() {
+  const sampleXs = [0, maxTime];
+  if (funcType === 'quadratic' && paramA !== 0) {
+    const vertexX = -paramB / (2 * paramA);
+    if (vertexX > 0 && vertexX < maxTime) sampleXs.push(vertexX);
+  }
+
+  const values = sampleXs.map(calcBaseDistanceValue);
+  let min = Math.min(...values);
+  let max = Math.max(...values);
+
+  if (noiseLevel > 0) {
+    min -= noiseLevel;
+    max += noiseLevel;
+  }
+
+  const span = Math.max(max - min, 1);
+  const pad = Math.max(span * 0.12, 5);
+  return {
+    min,
+    max,
+    displayMin: min - pad,
+    displayMax: max + pad,
+  };
+}
+
+function distanceToSceneX(value, sceneRange, width) {
+  const left = 60;
+  const right = width - 20;
+  const span = Math.max(sceneRange.displayMax - sceneRange.displayMin, 1);
+  const ratio = Math.min(1, Math.max(0, (value - sceneRange.displayMin) / span));
+  return left + ratio * (right - left);
+}
+
+function drawCannonDistanceMarkers(c, W, H, sceneRange) {
+  const span = sceneRange.displayMax - sceneRange.displayMin;
+  const step = niceDistStep(span);
+  c.font = '10px "Noto Sans KR"';
+  c.fillStyle = '#94a3b8';
+  c.textAlign = 'center';
+  const start = Math.ceil(sceneRange.displayMin / step) * step;
+  for (let d = start; d <= sceneRange.displayMax + step * 0.5; d += step) {
+    const px = distanceToSceneX(d, sceneRange, W);
+    c.beginPath();
+    c.moveTo(px, H * 0.7 - 4);
+    c.lineTo(px, H * 0.7 + 4);
+    c.strokeStyle = '#475569';
+    c.lineWidth = 1;
+    c.stroke();
+    c.fillText(`${formatN(d)}m`, px, H * 0.7 + 16);
+  }
 }
 
 // ══════════════ INIT ══════════════
@@ -330,19 +398,25 @@ function init() {
     }
   });
   speedSlider.addEventListener('input', e => {
-    animationSpeed = parseFloat(e.target.value) || 1;
+    animationSpeed = Math.min(3, Math.max(1, parseFloat(e.target.value) || 1));
     updateSpeedUI();
   });
+  if (formulaOverlay) formulaOverlay.addEventListener('click', handleFormulaOverlayClick);
+  if (dataBody) {
+    dataBody.addEventListener('click', handleDataTableClick);
+    dataBody.addEventListener('keydown', handleDataTableKeydown);
+  }
   graphCanvas.addEventListener('mousemove', handleGraphHover);
+  graphCanvas.addEventListener('click', handleGraphClick);
   graphCanvas.addEventListener('mouseleave', clearGraphHover);
   updateAutoButton();
 }
 
 function updateSpeedUI() {
+  animationSpeed = Math.min(3, Math.max(1, animationSpeed || 1));
   if (speedSlider) speedSlider.value = String(animationSpeed);
   let label = '보통';
-  if (animationSpeed < 1) label = '느림';
-  else if (animationSpeed > 1) label = '빠름';
+  if (animationSpeed > 1) label = '빠름';
   if (speedValue) speedValue.textContent = `${label} ${animationSpeed.toFixed(1)}x`;
 }
 
@@ -553,6 +627,37 @@ function cancelAutoFire() {
   updateAutoButton();
 }
 
+function resetExperiment() {
+  cancelAutoFire();
+  if (chargeRAF) cancelAnimationFrame(chargeRAF);
+  isCharging = false;
+  chargeStart = 0;
+  chargeTime = 0;
+  lastChargeCueSecond = 0;
+  animating = false;
+  animData = null;
+  dataPoints = [];
+  nextId = 1;
+  hoveredGraphPointId = null;
+  selectedTablePointId = null;
+  hideGraphTooltip();
+
+  const powerWrap = document.getElementById('powerBarWrap');
+  const powerFill = document.getElementById('powerBarFill');
+  const powerLabel = document.getElementById('powerBarLabel');
+  if (powerWrap) {
+    powerWrap.style.display = 'none';
+    powerWrap.classList.remove('pulse');
+  }
+  if (powerFill) powerFill.style.width = '0%';
+  if (powerLabel) powerLabel.textContent = '0.00초';
+
+  document.getElementById('instruction').style.display = '';
+  renderDataTable();
+  drawCannon();
+  drawGraph();
+}
+
 function runNextAutoShot() {
   if (!autoRunning || autoPaused || animating) return;
   if (autoQueue.length === 0) {
@@ -572,7 +677,7 @@ function fire(x) {
 
   // Animate
   animating = true;
-  const maxDist = calcDistance(maxTime);
+  const sceneRange = getReachDistanceRange();
   const duration = (FLIGHT_BASE_MS + x * FLIGHT_PER_SECOND_MS) / animationSpeed;
 
   animData = {
@@ -581,7 +686,7 @@ function fire(x) {
     duration,
     landingEffectSec: (LANDING_EFFECT_MS / animationSpeed) / 1000,
     landingSettleMs: LANDING_SETTLE_MS / animationSpeed,
-    maxDist: Math.max(maxDist, y, 100),
+    sceneRange,
     trail: [],
     landed: false,
     particles: []
@@ -592,11 +697,11 @@ function fire(x) {
 
 function animateFrame(now) {
   if (!animData) return;
-  const { x, y, startTime, duration, maxDist } = animData;
+  const { x, y, startTime, duration, sceneRange } = animData;
   const elapsed = now - startTime;
   const progress = Math.min(elapsed / duration, 1);
 
-  drawCannonFrame(progress, x, y, maxDist);
+  drawCannonFrame(progress, x, y, sceneRange);
 
   if (progress < 1) {
     requestAnimationFrame(animateFrame);
@@ -642,7 +747,7 @@ function animateParticles(now) {
     p.life = Math.max(0, 1 - elapsed * 2);
   });
 
-  drawCannonFrame(1, animData.x, animData.y, animData.maxDist, elapsed);
+  drawCannonFrame(1, animData.x, animData.y, animData.sceneRange, elapsed);
 
   if (elapsed < animData.landingEffectSec) {
     requestAnimationFrame(animateParticles);
@@ -656,6 +761,7 @@ function drawCannon() {
   const W = cannonCanvas.width / (window.devicePixelRatio || 1);
   const H = cannonCanvas.height / (window.devicePixelRatio || 1);
   const c = cannonCtx;
+  const sceneRange = getReachDistanceRange();
   c.clearRect(0, 0, W, H);
 
   // Sky gradient
@@ -678,33 +784,19 @@ function drawCannon() {
   c.beginPath(); c.moveTo(0, H * 0.7); c.lineTo(W, H * 0.7); c.stroke();
 
   // Distance markers
-  const maxDist = Math.max(calcDistance(maxTime), 100);
-  c.font = '10px "Noto Sans KR"';
-  c.fillStyle = '#94a3b8';
-  c.textAlign = 'center';
-  const step = niceDistStep(maxDist);
-  for (let d = step; d <= maxDist * 1.2; d += step) {
-    const px = 60 + (d / (maxDist * 1.2)) * (W - 80);
-    c.beginPath();
-    c.moveTo(px, H * 0.7 - 4);
-    c.lineTo(px, H * 0.7 + 4);
-    c.strokeStyle = '#475569';
-    c.lineWidth = 1;
-    c.stroke();
-    c.fillText(Math.round(d) + 'm', px, H * 0.7 + 16);
-  }
+  drawCannonDistanceMarkers(c, W, H, sceneRange);
 
   // Cannon
   drawCannonBody(c, W, H);
 
   // Previous landing flags
   dataPoints.forEach(p => {
-    const px = 60 + (p.y / (maxDist * 1.2)) * (W - 80);
+    const px = distanceToSceneX(p.y, sceneRange, W);
     drawFlag(c, px, H * 0.7, p.y);
   });
 }
 
-function drawCannonFrame(progress, x, y, maxDist, particleElapsed) {
+function drawCannonFrame(progress, x, y, sceneRange, particleElapsed) {
   const W = cannonCanvas.width / (window.devicePixelRatio || 1);
   const H = cannonCanvas.height / (window.devicePixelRatio || 1);
   const c = cannonCtx;
@@ -726,34 +818,26 @@ function drawCannonFrame(progress, x, y, maxDist, particleElapsed) {
   c.beginPath(); c.moveTo(0, H * 0.7); c.lineTo(W, H * 0.7); c.stroke();
 
   // Distance markers
-  const dispMax = Math.max(maxDist, 100);
-  const step = niceDistStep(dispMax);
-  c.font = '10px "Noto Sans KR"'; c.fillStyle = '#94a3b8'; c.textAlign = 'center';
-  for (let d = step; d <= dispMax * 1.2; d += step) {
-    const px = 60 + (d / (dispMax * 1.2)) * (W - 80);
-    c.beginPath(); c.moveTo(px, H * 0.7 - 4); c.lineTo(px, H * 0.7 + 4);
-    c.strokeStyle = '#475569'; c.lineWidth = 1; c.stroke();
-    c.fillText(Math.round(d) + 'm', px, H * 0.7 + 16);
-  }
+  drawCannonDistanceMarkers(c, W, H, sceneRange);
 
   drawCannonBody(c, W, H);
 
   // Previous flags
   dataPoints.forEach(p => {
-    const px = 60 + (p.y / (dispMax * 1.2)) * (W - 80);
+    const px = distanceToSceneX(p.y, sceneRange, W);
     drawFlag(c, px, H * 0.7, p.y);
   });
 
   // Projectile trajectory
   const cannonTipX = 55;
   const cannonTipY = H * 0.7 - 22;
-  const landX = 60 + (y / (dispMax * 1.2)) * (W - 80);
+  const landX = distanceToSceneX(y, sceneRange, W);
   const landY = H * 0.7;
 
   // Parabolic path
   const bx = progress;
   const projX = cannonTipX + (landX - cannonTipX) * bx;
-  const peakH = Math.min(H * 0.35, 50 + y * 0.8);
+  const peakH = Math.min(H * 0.35, Math.max(32, 42 + Math.abs(landX - cannonTipX) * 0.18));
   const projY = cannonTipY + (landY - cannonTipY) * bx - peakH * 4 * bx * (1 - bx);
 
   // Trail
@@ -848,9 +932,13 @@ function niceDistStep(max) {
 function renderDataTable() {
   const body = document.getElementById('dataBody');
   body.innerHTML = '';
+  if (!dataPoints.some(point => point.id === selectedTablePointId)) {
+    selectedTablePointId = null;
+  }
   dataPoints.forEach((p, i) => {
     const tr = document.createElement('tr');
     tr.dataset.pointId = String(p.id);
+    tr.tabIndex = 0;
     if (i === dataPoints.length - 1) tr.className = 'new-row';
     tr.innerHTML = `<td>${i + 1}</td><td>${p.x}</td><td>${p.y}</td>`;
     body.appendChild(tr);
@@ -861,11 +949,62 @@ function renderDataTable() {
   if (wrap) wrap.scrollTop = wrap.scrollHeight;
 }
 
+function getHighlightedPointId() {
+  if (hoveredGraphPointId !== null) return hoveredGraphPointId;
+  return selectedTablePointId;
+}
+
 function updateDataTableHighlight() {
   const rows = document.querySelectorAll('#dataBody tr');
+  const highlightedPointId = getHighlightedPointId();
   rows.forEach(row => {
-    row.classList.toggle('hover-row', row.dataset.pointId === String(hoveredGraphPointId));
+    const isHighlighted = row.dataset.pointId === String(highlightedPointId);
+    row.classList.toggle('hover-row', isHighlighted);
+    row.setAttribute('aria-selected', isHighlighted ? 'true' : 'false');
   });
+}
+
+function selectDataPoint(pointId) {
+  selectedTablePointId = selectedTablePointId === pointId ? null : pointId;
+  hoveredGraphPointId = null;
+  hideGraphTooltip();
+  updateDataTableHighlight();
+  const selectedRow = document.querySelector(`#dataBody tr[data-point-id="${selectedTablePointId}"]`);
+  if (selectedRow) selectedRow.scrollIntoView({ block: 'nearest' });
+  if (dataPoints.length > 0) drawGraph();
+}
+
+function handleDataTableClick(event) {
+  const row = event.target.closest('tr[data-point-id]');
+  if (!row || !dataBody || !dataBody.contains(row)) return;
+  selectDataPoint(Number(row.dataset.pointId));
+}
+
+function handleDataTableKeydown(event) {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  const row = event.target.closest('tr[data-point-id]');
+  if (!row || !dataBody || !dataBody.contains(row)) return;
+  event.preventDefault();
+  selectDataPoint(Number(row.dataset.pointId));
+}
+
+function findGraphPointAt(clientX, clientY) {
+  if (graphHitPoints.length === 0) return null;
+  const rect = graphCanvas.getBoundingClientRect();
+  const mx = clientX - rect.left;
+  const my = clientY - rect.top;
+  let hovered = null;
+  let bestDist = Infinity;
+  graphHitPoints.forEach(point => {
+    const dx = mx - point.cx;
+    const dy = my - point.cy;
+    const dist = Math.hypot(dx, dy);
+    if (dist <= 12 && dist < bestDist) {
+      hovered = point;
+      bestDist = dist;
+    }
+  });
+  return hovered;
 }
 
 // ══════════════ GRAPH ══════════════
@@ -936,9 +1075,10 @@ function drawGraph() {
   c.fillText('거리 y (m)', 0, 0); c.restore();
 
   // Data points
+  const highlightedPointId = getHighlightedPointId();
   dataPoints.forEach((p, i) => {
     const cx = toX(p.x), cy = toY(p.y);
-    const isHovered = hoveredGraphPointId === p.id;
+    const isHovered = highlightedPointId === p.id;
     graphHitPoints.push({ id: p.id, x: p.x, y: p.y, cx, cy });
     // Point
     c.beginPath(); c.arc(cx, cy, 5, 0, Math.PI * 2);
@@ -957,25 +1097,7 @@ function drawGraph() {
 }
 
 function handleGraphHover(e) {
-  if (graphHitPoints.length === 0) {
-    clearGraphHover();
-    return;
-  }
-  const rect = graphCanvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left;
-  const my = e.clientY - rect.top;
-  let hovered = null;
-  let bestDist = Infinity;
-  graphHitPoints.forEach(point => {
-    const dx = mx - point.cx;
-    const dy = my - point.cy;
-    const dist = Math.hypot(dx, dy);
-    if (dist <= 12 && dist < bestDist) {
-      hovered = point;
-      bestDist = dist;
-    }
-  });
-
+  const hovered = findGraphPointAt(e.clientX, e.clientY);
   if (!hovered) {
     clearGraphHover();
     return;
@@ -987,6 +1109,18 @@ function handleGraphHover(e) {
     drawGraph();
   }
   showGraphTooltip(hovered);
+}
+
+function handleGraphClick(e) {
+  const clicked = findGraphPointAt(e.clientX, e.clientY);
+  if (!clicked) {
+    selectedTablePointId = null;
+    clearGraphHover();
+    return;
+  }
+  hoveredGraphPointId = clicked.id;
+  showGraphTooltip(clicked);
+  selectDataPoint(clicked.id);
 }
 
 function showGraphTooltip(point) {
@@ -1029,6 +1163,26 @@ function formatFormulaValue(v) {
   return v.toFixed(1);
 }
 
+function getFormulaParamValue(paramKey) {
+  if (paramKey === 'a') return paramA;
+  if (paramKey === 'b') return paramB;
+  return paramC;
+}
+
+function setFormulaParamValue(paramKey, nextValue) {
+  if (paramKey === 'a') paramA = nextValue;
+  else if (paramKey === 'b') paramB = nextValue;
+  else paramC = nextValue;
+}
+
+function renderFormulaParam(paramKey, value) {
+  if (editingFormulaParam === paramKey) {
+    const draft = formulaParamDraft === '' ? String(value) : formulaParamDraft;
+    return `<input class="formula-param-input" id="formulaParamInput" type="number" step="0.1" value="${draft}">`;
+  }
+  return `<span class="param-em formula-param" data-param="${paramKey}" title="클릭해 수정">${formatFormulaValue(value)}</span>`;
+}
+
 function getFormulaText(type, a, b, c) {
   if (type === 'linear') return `y = ${formatFormulaValue(a)} × x + ${formatFormulaValue(b)}`;
   if (type === 'quadratic') return `y = ${formatFormulaValue(a)} × x × x + ${formatFormulaValue(b)} × x + ${formatFormulaValue(c)}`;
@@ -1037,18 +1191,102 @@ function getFormulaText(type, a, b, c) {
 
 function getFormulaHTML(type, a, b, c) {
   if (type === 'linear') {
-    return `y = <span class="param-em">${formatFormulaValue(a)}</span> × x + <span class="param-em">${formatFormulaValue(b)}</span>`;
+    return `y = ${renderFormulaParam('a', a)} × x + ${renderFormulaParam('b', b)}`;
   }
   if (type === 'quadratic') {
-    return `y = <span class="param-em">${formatFormulaValue(a)}</span> × x × x + <span class="param-em">${formatFormulaValue(b)}</span> × x + <span class="param-em">${formatFormulaValue(c)}</span>`;
+    return `y = ${renderFormulaParam('a', a)} × x × x + ${renderFormulaParam('b', b)} × x + ${renderFormulaParam('c', c)}`;
   }
-  return `y = <span class="param-em">${formatFormulaValue(a)}</span> × √x + <span class="param-em">${formatFormulaValue(b)}</span>`;
+  return `y = ${renderFormulaParam('a', a)} × √x + ${renderFormulaParam('b', b)}`;
 }
 
 function updateFormulaOverlay() {
   const overlay = document.getElementById('formulaOverlay');
   if (!overlay) return;
   overlay.innerHTML = getFormulaHTML(funcType, paramA, paramB, paramC);
+  if (!editingFormulaParam) return;
+  const input = document.getElementById('formulaParamInput');
+  if (!input) return;
+  input.addEventListener('input', e => {
+    formulaParamDraft = e.target.value;
+  });
+  input.addEventListener('keydown', handleFormulaParamInputKeydown);
+  input.addEventListener('blur', () => commitFormulaParamEdit(formulaParamDraft));
+  requestAnimationFrame(() => {
+    input.focus({ preventScroll: true });
+    input.select();
+  });
+}
+
+function handleFormulaOverlayClick(event) {
+  const paramEl = event.target.closest('.formula-param');
+  if (!paramEl || !formulaOverlay || !formulaOverlay.contains(paramEl)) return;
+  if (animating || autoRunning || isCharging) return;
+  const paramKey = paramEl.dataset.param;
+  if (!paramKey) return;
+  editingFormulaParam = paramKey;
+  formulaParamDraft = String(getFormulaParamValue(paramKey));
+  updateFormulaOverlay();
+}
+
+function handleFormulaParamInputKeydown(event) {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    commitFormulaParamEdit(event.target.value);
+  } else if (event.key === 'Escape') {
+    event.preventDefault();
+    cancelFormulaParamEdit();
+  }
+}
+
+function cancelFormulaParamEdit() {
+  editingFormulaParam = null;
+  formulaParamDraft = '';
+  updateFormulaOverlay();
+}
+
+function syncSettingsInputs() {
+  document.getElementById('setType').value = funcType;
+  document.getElementById('setA').value = paramA;
+  document.getElementById('setB').value = paramB;
+  document.getElementById('setC').value = paramC;
+  document.getElementById('setNoise').value = noiseLevel;
+  document.getElementById('setMax').value = maxTime;
+}
+
+function applyFormulaParamChange(paramKey, rawValue) {
+  const normalized = Math.round(rawValue * 10) / 10;
+  const currentValue = getFormulaParamValue(paramKey);
+  if (normalized === currentValue) {
+    updateFormulaOverlay();
+    return;
+  }
+  setFormulaParamValue(paramKey, normalized);
+  syncSettingsInputs();
+  updatePreview();
+  cancelAutoFire();
+  dataPoints = [];
+  nextId = 1;
+  hoveredGraphPointId = null;
+  selectedTablePointId = null;
+  hideGraphTooltip();
+  renderDataTable();
+  updateFormulaOverlay();
+  drawCannon();
+  drawGraph();
+  document.getElementById('instruction').style.display = '';
+}
+
+function commitFormulaParamEdit(rawValue) {
+  if (!editingFormulaParam) return;
+  const paramKey = editingFormulaParam;
+  editingFormulaParam = null;
+  formulaParamDraft = '';
+  const parsed = parseFloat(rawValue);
+  if (!Number.isFinite(parsed)) {
+    updateFormulaOverlay();
+    return;
+  }
+  applyFormulaParamChange(paramKey, parsed);
 }
 
 // ══════════════ SETTINGS ══════════════
@@ -1074,6 +1312,9 @@ function saveSettings() {
   cancelAutoFire();
   dataPoints = [];
   nextId = 1;
+  hoveredGraphPointId = null;
+  selectedTablePointId = null;
+  hideGraphTooltip();
   updateFormulaOverlay();
   renderDataTable();
   drawCannon();
