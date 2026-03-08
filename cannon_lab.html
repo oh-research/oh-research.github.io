@@ -39,40 +39,237 @@ body{
 .header-actions{display:flex;align-items:center;gap:8px;}
 .home-link{padding:7px 12px;border:1px solid var(--border);border-radius:999px;background:rgba(15,23,42,.92);backdrop-filter:blur(8px);color:#fff;text-decoration:none;font-size:15px;font-weight:800;line-height:1;letter-spacing:.01em;}
 .home-link:hover{color:var(--accent);border-color:var(--accent);}
-.app{display:grid;grid-template-columns:1fr 280px 1fr;flex:1;min-height:0;gap:0;}
+.app{display:grid;grid-template-columns:1fr 320px 1fr;flex:1;min-height:0;gap:0;}
 .panel{background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
 .panel:last-child{border-right:none;}
 .panel-header{padding:10px 14px;background:rgba(0,0,0,.2);font-family:'Jua',sans-serif;font-size:15px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;}
 .panel-title-with-icon{display:inline-flex;align-items:center;gap:8px;}
 .panel-title-with-icon svg{width:24px;height:24px;display:block;flex:none;}
-.panel-subheader{padding:9px 14px;border-bottom:1px solid var(--border);background:rgba(15,23,42,.5);flex-shrink:0;}
+.panel-meta{display:flex;align-items:center;gap:8px;}
+.panel-score{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:78px;
+  padding:5px 10px;
+  border:1px solid rgba(245,158,11,.32);
+  border-radius:999px;
+  background:rgba(245,158,11,.12);
+  color:#fef3c7;
+  font-size:12px;
+  font-weight:700;
+  font-family:'Noto Sans KR',sans-serif;
+}
+.panel-count{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:78px;
+  padding:5px 10px;
+  border:1px solid rgba(148,163,184,.24);
+  border-radius:999px;
+  background:rgba(148,163,184,.1);
+  color:#e2e8f0;
+  font-size:12px;
+  font-weight:700;
+  font-family:'Noto Sans KR',sans-serif;
+}
+.panel-subheader{padding:10px 14px;border-bottom:1px solid var(--border);background:rgba(15,23,42,.5);flex-shrink:0;display:flex;flex-direction:column;gap:10px;}
 .panel-body{flex:1;overflow:hidden;position:relative;}
 
-/* Cannon Canvas */
+/* Cannon Scene */
+.cannon-panel-body{background:#0f172a;}
 #cannonCanvas{width:100%;height:100%;display:block;}
-.formula-overlay{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:4;max-width:calc(100% - 24px);padding:5px 14px;border-radius:8px;background:rgba(0,0,0,.6);font-family:'Jua',sans-serif;font-size:14px;color:var(--accent2);pointer-events:auto;white-space:nowrap;box-shadow:0 10px 24px rgba(2,6,23,.26);}
-.formula-overlay .param-em{color:var(--accent);}
-.formula-param{display:inline-flex;align-items:center;min-width:18px;padding:0 2px;border-bottom:1px dashed rgba(245,158,11,.35);cursor:text;}
-.formula-param:hover{color:#fde68a;}
-.formula-param-input{width:64px;padding:2px 6px;border:1px solid rgba(59,130,246,.45);border-radius:6px;background:rgba(15,23,42,.96);color:#fff;font-family:'Jua',sans-serif;font-size:14px;text-align:center;outline:none;box-shadow:0 0 0 2px rgba(59,130,246,.18);}
-.speed-control{display:flex;align-items:center;gap:12px;}
-.speed-control-label{font-size:12px;color:var(--muted);font-weight:700;white-space:nowrap;}
-.speed-slider{flex:1;accent-color:var(--accent2);cursor:pointer;}
-.speed-value{min-width:64px;text-align:right;font-family:'Jua',sans-serif;font-size:14px;color:var(--text);white-space:nowrap;}
+.stage-strip{display:flex;flex-wrap:wrap;gap:8px;}
+.stage-pill{
+  padding:7px 12px;
+  border:1px solid rgba(148,163,184,.2);
+  border-radius:999px;
+  background:rgba(15,23,42,.82);
+  color:var(--muted);
+  font-size:12px;
+  font-weight:700;
+  cursor:pointer;
+  transition:.18s ease;
+}
+.stage-pill:hover:not(:disabled){border-color:rgba(245,158,11,.45);color:var(--text);}
+.stage-pill.active{background:rgba(245,158,11,.18);border-color:rgba(245,158,11,.6);color:#fff;}
+.stage-pill:disabled{opacity:.45;cursor:default;}
+.scene-chip{
+  position:absolute;
+  top:14px;
+  left:14px;
+  z-index:6;
+  max-width:min(320px, calc(100% - 28px));
+  padding:8px 12px;
+  border:1px solid rgba(148,163,184,.22);
+  border-radius:999px;
+  background:rgba(15,23,42,.86);
+  backdrop-filter:blur(10px);
+  color:#e2e8f0;
+  font-size:12px;
+  font-weight:700;
+}
+.celebration{
+  position:absolute;
+  top:38%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  z-index:8;
+  display:none;
+  font-family:'Jua',sans-serif;
+  font-size:42px;
+  color:var(--accent3);
+  text-shadow:0 0 20px rgba(16,185,129,.6);
+  pointer-events:none;
+  animation:celebPop .6s ease-out;
+}
+@keyframes celebPop{
+  0%{transform:translate(-50%,-50%) scale(0);opacity:0;}
+  50%{transform:translate(-50%,-50%) scale(1.2);opacity:1;}
+  100%{transform:translate(-50%,-50%) scale(1);opacity:1;}
+}
+.control-card{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  width:min(560px, calc(100% - 28px));
+  bottom:14px;
+  z-index:10;
+  height:296px;
+  padding:14px;
+  border:1px solid rgba(148,163,184,.18);
+  border-radius:20px;
+  background:rgba(15,23,42,.88);
+  backdrop-filter:blur(12px);
+  box-shadow:0 20px 36px rgba(2,6,23,.28);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.control-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px;}
+.card-stage{font-family:'Jua',sans-serif;font-size:18px;color:#fff;}
+.card-description{margin-top:4px;font-size:12px;line-height:1.55;color:var(--muted);}
+.mission-chip{
+  padding:7px 10px;
+  border-radius:999px;
+  background:rgba(59,130,246,.18);
+  border:1px solid rgba(59,130,246,.42);
+  color:#dbeafe;
+  font-size:12px;
+  font-weight:700;
+  white-space:nowrap;
+}
+.mission-chip.hidden{display:none;}
+.field-grid{display:grid;grid-template-columns:repeat(2, minmax(0,1fr));gap:10px;margin-bottom:10px;}
+.field{display:flex;flex-direction:column;gap:6px;}
+.field-label{font-size:12px;color:var(--muted);font-weight:700;}
+.field input{
+  width:100%;
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(15,23,42,.96);
+  color:var(--text);
+  font-size:14px;
+  font-variant-numeric:tabular-nums;
+}
+.field input:focus{outline:none;border-color:var(--accent2);box-shadow:0 0 0 2px rgba(59,130,246,.15);}
+.field input[readonly]{background:rgba(30,41,59,.9);color:#cbd5e1;}
+.field.hidden{display:none;}
+.quick-values{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
+.quick-values.hidden{display:none;}
+.quick-chip{
+  padding:7px 11px;
+  border:1px solid rgba(245,158,11,.28);
+  border-radius:999px;
+  background:rgba(245,158,11,.1);
+  color:#fef3c7;
+  font-size:12px;
+  font-weight:700;
+  cursor:pointer;
+  transition:.18s ease;
+}
+.quick-chip:hover{background:rgba(245,158,11,.18);border-color:rgba(245,158,11,.5);}
+.card-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;}
+.primary-btn,.ghost-btn,.reset-btn{
+  padding:9px 14px;
+  border:none;
+  border-radius:999px;
+  cursor:pointer;
+  font-family:'Jua',sans-serif;
+  font-size:14px;
+  transition:.18s ease;
+}
+.primary-btn{background:var(--accent);color:#111827;box-shadow:0 14px 28px rgba(245,158,11,.22);}
+.primary-btn:hover:not(:disabled){background:#fbbf24;}
+.ghost-btn{background:rgba(59,130,246,.9);color:#fff;box-shadow:0 14px 28px rgba(59,130,246,.22);}
+.ghost-btn:hover:not(:disabled){background:#2563eb;}
+.reset-btn{background:rgba(239,68,68,.92);color:#fff;}
+.reset-btn:hover:not(:disabled){background:#dc2626;}
+.primary-btn:disabled,.ghost-btn:disabled,.reset-btn:disabled{opacity:.45;cursor:default;box-shadow:none;}
+.result-note{
+  margin-top:12px;
+  flex:1;
+  min-height:0;
+  padding:10px 12px;
+  border:1px solid rgba(148,163,184,.18);
+  border-radius:14px;
+  background:rgba(15,23,42,.72);
+  color:#e2e8f0;
+  font-size:12px;
+  line-height:1.6;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  overflow:hidden;
+  text-align:center;
+}
+.result-note.success{background:rgba(16,185,129,.14);border-color:rgba(16,185,129,.4);color:#ecfdf5;}
+.result-note.warning{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.35);color:#fef3c7;}
+.result-note.danger{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.35);color:#fee2e2;}
 
-/* Data Table */
+/* Middle Panel */
+.guess-card{padding:12px;border-bottom:1px solid var(--border);background:rgba(15,23,42,.35);}
+.guess-card label{display:block;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px;}
+.guess-card input{
+  width:100%;
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:rgba(15,23,42,.96);
+  color:var(--text);
+  font-size:13px;
+}
+.guess-card input:focus{outline:none;border-color:var(--accent2);}
+.guess-card p{margin-top:8px;font-size:12px;line-height:1.55;color:var(--muted);}
 .table-wrap{flex:1;overflow-y:auto;padding:8px;}
 .data-table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:13px;}
 .data-table tbody tr{cursor:pointer;}
 .data-table th{color:var(--muted);font-weight:400;padding:6px 8px;border-bottom:1px solid var(--border);text-align:center;font-size:12px;position:sticky;top:0;background:var(--panel);}
-.data-table td{padding:6px 8px;text-align:center;border-bottom:1px solid rgba(51,65,85,.3);}
+.data-table td{padding:8px;text-align:center;border-bottom:1px solid rgba(51,65,85,.3);vertical-align:middle;}
+.data-table td.memo-cell{text-align:left;font-size:12px;line-height:1.5;color:#cbd5e1;}
 .data-table tr.new-row{animation:flashIn .5s;}
 .data-table tr.hover-row td{background:rgba(59,130,246,.14);}
 .data-table tr.hover-row td:first-child{border-top-left-radius:8px;border-bottom-left-radius:8px;}
 .data-table tr.hover-row td:last-child{border-top-right-radius:8px;border-bottom-right-radius:8px;}
+.row-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:42px;
+  padding:2px 8px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:700;
+  margin-right:6px;
+}
+.row-badge.explore{background:rgba(245,158,11,.16);color:#fef3c7;}
+.row-badge.predict{background:rgba(59,130,246,.18);color:#dbeafe;}
+.row-badge.challenge{background:rgba(16,185,129,.16);color:#d1fae5;}
 @keyframes flashIn{0%{background:var(--accent);}100%{background:transparent;}}
 
-/* Graph Canvas */
+/* Graph */
 #graphCanvas{width:100%;height:100%;display:block;}
 .graph-panel-body{padding:14px;}
 .graph-wrap{position:relative;width:100%;height:100%;border-radius:18px;overflow:hidden;background:#1e293b;box-shadow:inset 0 0 0 1px rgba(148,163,184,.12);}
@@ -81,35 +278,7 @@ body{
 .graph-tooltip-label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;}
 .graph-tooltip-value{display:block;font-family:'Jua',sans-serif;font-size:20px;color:#fff;letter-spacing:.02em;}
 
-/* Bottom Input Bar */
-.input-bar{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);padding:8px 12px;display:flex;align-items:center;gap:6px;z-index:10;}
-.space-hint{padding:5px 10px;font-size:11px;border:1px solid var(--accent);border-radius:999px;background:rgba(245,158,11,.14);color:var(--text);font-weight:700;font-family:'Noto Sans KR',sans-serif;}
-.auto-count{display:flex;align-items:center;gap:6px;margin-left:auto;padding:4px 8px;border:1px solid var(--border);border-radius:999px;background:rgba(15,23,42,.72);}
-.auto-count-label{font-size:11px;color:var(--muted);font-weight:700;white-space:nowrap;}
-.auto-count-input{width:52px;padding:4px 6px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:12px;text-align:right;font-variant-numeric:tabular-nums;}
-.auto-count-input:focus{outline:none;border-color:var(--accent2);}
-.auto-btn{padding:7px 12px;background:var(--accent2);color:#fff;border:none;border-radius:999px;cursor:pointer;font-family:'Jua',sans-serif;font-size:13px;box-shadow:0 10px 22px rgba(59,130,246,.28);}
-.auto-btn:hover{background:#2563eb;}
-.auto-btn:disabled{background:#475569;cursor:default;box-shadow:none;}
-.auto-cancel-btn{padding:7px 12px;background:rgba(71,85,105,.92);color:#fff;border:none;border-radius:999px;cursor:pointer;font-family:'Jua',sans-serif;font-size:13px;}
-.auto-cancel-btn:hover{background:#64748b;}
-.auto-cancel-btn:disabled{opacity:.45;cursor:default;}
-.reset-btn{padding:7px 12px;background:rgba(239,68,68,.92);color:#fff;border:none;border-radius:999px;cursor:pointer;font-family:'Jua',sans-serif;font-size:13px;}
-.reset-btn:hover{background:#dc2626;}
-
-/* Power Bar */
-.power-bar-wrap{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);width:200px;height:24px;background:var(--bg);border-radius:12px;border:2px solid var(--border);overflow:visible;display:none;z-index:10;}
-.power-bar-wrap.pulse{animation:powerPulse .22s ease-out;}
-.power-bar-fill{position:relative;z-index:1;height:100%;width:0%;transition:none;border-radius:10px;}
-.power-bar-scale{position:absolute;left:0;right:0;top:0;bottom:0;z-index:2;pointer-events:none;overflow:visible;}
-.power-bar-tick{position:absolute;top:3px;bottom:3px;width:1px;background:rgba(255,255,255,.45);}
-.power-bar-tick span{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--text);font-variant-numeric:tabular-nums;white-space:nowrap;}
-.power-bar-label{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;font-family:'Jua',sans-serif;font-size:13px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5);font-variant-numeric:tabular-nums;letter-spacing:.02em;}
-@keyframes powerPulse{0%{transform:translateX(-50%) scale(1);}50%{transform:translateX(-50%) scale(1.04);}100%{transform:translateX(-50%) scale(1);}}
-
 /* Settings */
-.settings-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;}
-.settings-btn:hover{color:var(--text);}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none;align-items:center;justify-content:center;}
 .modal-overlay.show{display:flex;}
 .modal{background:var(--panel);border-radius:12px;padding:20px;width:380px;max-width:90vw;}
@@ -121,19 +290,20 @@ body{
 .modal .preview{margin-top:10px;padding:8px;background:var(--bg);border-radius:6px;font-family:'Jua',sans-serif;font-size:13px;color:var(--accent2);text-align:center;}
 .modal .save-btn{margin-top:14px;width:100%;padding:10px;background:var(--accent);color:#000;border:none;border-radius:8px;font-family:'Jua',sans-serif;font-size:14px;cursor:pointer;}
 
-/* Instruction overlay */
-.instruction{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Jua',sans-serif;font-size:16px;color:var(--muted);text-align:center;pointer-events:none;line-height:1.8;}
-
-/* New point pulse */
-@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(245,158,11,.6);}100%{box-shadow:0 0 0 12px rgba(245,158,11,0);}}
-
+@media(max-width:1100px){
+  .app{grid-template-columns:1fr;}
+  .panel{border-right:none;border-bottom:1px solid var(--border);}
+  .panel-body{height:46vh;}
+}
 @media(max-width:900px){
   .page{width:calc(100vw - 20px);height:auto;min-height:calc(100vh - 20px);margin:10px auto;border-radius:22px;}
   .title-bar{padding:10px 12px;align-items:flex-start;}
   .title-text{font-size:19px;}
-  .app{grid-template-columns:1fr;height:auto;}
-  .panel{border-right:none;border-bottom:1px solid var(--border);}
-  .panel-body{height:40vh;}
+  .panel-body{height:52vh;}
+  .control-card{left:14px;right:14px;transform:none;width:auto;height:auto;min-height:296px;}
+  .control-card-header{flex-direction:column;align-items:flex-start;}
+  .mission-chip{white-space:normal;}
+  .field-grid{grid-template-columns:1fr;}
   body{overflow-y:auto;}
 }
 </style>
@@ -146,81 +316,109 @@ body{
       <a class="home-link" href="./index.html">← 홈</a>
     </div>
   </header>
+
   <div class="app">
-  <!-- Left: Cannon Visualization -->
-  <div class="panel">
-    <div class="panel-header">
-      <span class="panel-title-with-icon">
-        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M12 34H24" stroke="#f8fafc" stroke-width="5" stroke-linecap="round" opacity=".9"/>
-          <path d="M8 42H22" stroke="#f8fafc" stroke-width="5" stroke-linecap="round" opacity=".7"/>
-          <path d="M16 26H27" stroke="#f8fafc" stroke-width="5" stroke-linecap="round" opacity=".55"/>
-          <circle cx="40" cy="34" r="13" fill="#0f172a"/>
-          <circle cx="40" cy="34" r="12" stroke="#334155" stroke-width="2"/>
-          <circle cx="35.5" cy="29.5" r="3.5" fill="rgba(255,255,255,.18)"/>
-        </svg>
-        <span>대포 발사</span>
-      </span>
-    </div>
-    <div class="panel-subheader">
-      <div class="speed-control">
-        <span class="speed-control-label">속도 조절</span>
-        <input class="speed-slider" id="speedSlider" type="range" min="1" max="3" step="0.1" value="1">
-        <span class="speed-value" id="speedValue">보통 1.0x</span>
-      </div>
-    </div>
-    <div class="panel-body">
-      <canvas id="cannonCanvas"></canvas>
-      <div class="formula-overlay" id="formulaOverlay"></div>
-      <div class="power-bar-wrap" id="powerBarWrap">
-        <div class="power-bar-scale" id="powerBarScale"></div>
-        <div class="power-bar-fill" id="powerBarFill"></div>
-        <div class="power-bar-label" id="powerBarLabel">0.00초</div>
-      </div>
-      <div class="instruction" id="instruction">스페이스바를 길게 누른 뒤<br>놓으면 발사됩니다</div>
-      <div class="input-bar">
-        <div class="space-hint">🎮 스페이스바로 발사</div>
-        <div class="auto-count">
-          <span class="auto-count-label">자동발사</span>
-          <input class="auto-count-input" id="autoCountInput" type="number" min="1" max="50" step="1" value="10">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title-with-icon">
+          <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M12 34H24" stroke="#f8fafc" stroke-width="5" stroke-linecap="round" opacity=".9"/>
+            <path d="M8 42H22" stroke="#f8fafc" stroke-width="5" stroke-linecap="round" opacity=".7"/>
+            <path d="M16 26H27" stroke="#f8fafc" stroke-width="5" stroke-linecap="round" opacity=".55"/>
+            <circle cx="40" cy="34" r="13" fill="#0f172a"/>
+            <circle cx="40" cy="34" r="12" stroke="#334155" stroke-width="2"/>
+            <circle cx="35.5" cy="29.5" r="3.5" fill="rgba(255,255,255,.18)"/>
+          </svg>
+          <span>대포 발사</span>
+        </span>
+        <div class="panel-meta">
+          <span class="panel-score" id="scoreBadge">점수 0 / 2</span>
+          <span class="panel-count" id="trialBadge">시행 0회</span>
         </div>
-        <button class="auto-btn" id="autoBtn" onclick="toggleAutoFire()">자동 발사</button>
-        <button class="auto-cancel-btn" id="autoCancelBtn" onclick="cancelAutoFire()" disabled>취소</button>
-        <button class="reset-btn" onclick="resetExperiment()">초기화</button>
       </div>
-    </div>
-  </div>
-
-  <!-- Center: Data Table -->
-  <div class="panel">
-    <div class="panel-header"><span>📋 데이터</span></div>
-    <div class="panel-body" style="display:flex;flex-direction:column;">
-      <div class="table-wrap">
-        <table class="data-table">
-          <thead><tr><th>#</th><th>시간 (x)</th><th>거리 (y)</th></tr></thead>
-          <tbody id="dataBody"></tbody>
-        </table>
+      <div class="panel-subheader">
+        <div class="stage-strip">
+          <button class="stage-pill" id="stageExploreBtn" data-stage="explore">1. 탐색</button>
+          <button class="stage-pill" id="stagePredictBtn" data-stage="predict">2. 예측</button>
+          <button class="stage-pill" id="stageChallengeBtn" data-stage="challenge">3. 도전</button>
+        </div>
       </div>
-    </div>
-  </div>
+      <div class="panel-body cannon-panel-body">
+        <canvas id="cannonCanvas"></canvas>
+        <div class="scene-chip" id="sceneChip">여러 힘 x를 넣어 도달 거리 y를 관찰해 보세요.</div>
+        <div class="celebration" id="celebration">🎉 완벽!</div>
+        <div class="control-card">
+          <div class="control-card-header">
+            <div>
+              <div class="card-stage" id="stageTitle">1단계 탐색</div>
+              <p class="card-description" id="stageDescription">힘 x를 직접 입력하고, 대포알이 도달한 거리 y를 데이터로 모아 보세요.</p>
+            </div>
+            <div class="mission-chip hidden" id="missionChip"></div>
+          </div>
 
-  <!-- Right: Graph -->
-  <div class="panel">
-    <div class="panel-header"><span>📈 좌표평면</span></div>
-    <div class="panel-body graph-panel-body">
-      <div class="graph-wrap">
-        <canvas id="graphCanvas"></canvas>
-        <div class="graph-tooltip" id="graphTooltip">
-          <span class="graph-tooltip-label">좌표</span>
-          <span class="graph-tooltip-value" id="graphTooltipValue"></span>
+          <div class="field-grid">
+            <label class="field">
+              <span class="field-label" id="forceFieldLabel">힘 x</span>
+              <input id="forceInput" type="number" min="0.1" max="5" step="0.01" placeholder="예: 1.50">
+            </label>
+            <label class="field hidden" id="predictionField">
+              <span class="field-label">내 예상 거리 y</span>
+              <input id="predictionInput" type="number" step="0.01" placeholder="예: 42.00">
+            </label>
+          </div>
+
+          <div class="quick-values" id="quickValues"></div>
+
+          <div class="card-actions">
+            <button class="primary-btn" id="fireBtn" type="button">발사하기</button>
+            <button class="ghost-btn" id="nextStageBtn" type="button">예측 단계로</button>
+            <button class="reset-btn" id="resetBtn" type="button">전체 초기화</button>
+          </div>
+
+          <div class="result-note" id="resultNote">추천값 0.5, 1.0, 1.5, 2.0부터 시작해 보세요.</div>
         </div>
       </div>
     </div>
-  </div>
+
+    <div class="panel">
+      <div class="panel-header"><span>📋 실험 기록</span></div>
+      <div class="panel-body" style="display:flex;flex-direction:column;">
+        <div class="guess-card">
+          <label for="guessInput">규칙 추측 메모</label>
+          <input id="guessInput" type="text" placeholder="예: y = 25x + 5">
+          <p>데이터를 보며 내가 발견한 규칙이나 식을 적어 두세요.</p>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>힘 (x)</th>
+                <th>거리 (y)</th>
+                <th>메모</th>
+              </tr>
+            </thead>
+            <tbody id="dataBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header"><span>📈 거리 그래프</span></div>
+      <div class="panel-body graph-panel-body">
+        <div class="graph-wrap">
+          <canvas id="graphCanvas"></canvas>
+          <div class="graph-tooltip" id="graphTooltip">
+            <span class="graph-tooltip-label">좌표</span>
+            <span class="graph-tooltip-value" id="graphTooltipValue"></span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- Settings Modal -->
 <div class="modal-overlay" id="settingsModal">
   <div class="modal">
     <button class="close-btn" onclick="closeSettings()">&times;</button>
@@ -235,69 +433,114 @@ body{
     <label>b</label><input type="number" id="setB" value="0" step="0.1" onchange="updatePreview()">
     <label>c (2차만)</label><input type="number" id="setC" value="0" step="0.1" onchange="updatePreview()">
     <label>노이즈 레벨 (0 = 정확)</label><input type="number" id="setNoise" value="0" min="0" max="20" step="1">
-    <label>최대 시간 (초)</label><input type="number" id="setMax" value="5" min="1" max="5" step="0.5">
+    <label>최대 입력 x</label><input type="number" id="setMax" value="5" min="1" max="5" step="0.5">
     <div class="preview" id="setPreview">y = 25 × x + 0</div>
     <button class="save-btn" onclick="saveSettings()">저장 (데이터 초기화)</button>
   </div>
 </div>
 
 <script>
-// ══════════════ STATE ══════════════
-let funcType = 'linear'; // 'linear' | 'quadratic' | 'sqrt'
-let paramA = 25, paramB = 0, paramC = 0;
+let funcType = 'linear';
+let paramA = 25;
+let paramB = 0;
+let paramC = 0;
 let noiseLevel = 0;
-let maxTime = 5;
-let dataPoints = []; // [{x, y, id}]
-let nextId = 1;
+let maxInput = 5;
 
-// Space bar state
-let isCharging = false;
-let chargeStart = 0;
-let chargeTime = 0;
-let chargeRAF = null;
-let lastChargeCueSecond = 0;
-let autoQueue = [];
-let autoRunning = false;
-let autoPaused = false;
-let autoTotalShots = 0;
-let autoNextTimeoutId = null;
+let dataPoints = [];
+let nextId = 1;
 let animationSpeed = 1;
 
-// Animation state
+let currentStage = 'explore';
+let predictionUnlocked = false;
+let challengeUnlocked = false;
+let predictionMission = null;
+let challengeMission = null;
+let exploreLocked = false;
+let predictStageCompleted = false;
+let challengeStageCompleted = false;
+
 let animating = false;
 let animData = null;
+let graphHitPoints = [];
+let hoveredGraphPointId = null;
+let selectedPointId = null;
+let settleTimeoutId = null;
+
+const X_PRECISION = 100;
+const QUICK_VALUES = [0.5, 1.0, 1.5, 2.0];
 const FLIGHT_BASE_MS = 380;
-const FLIGHT_PER_SECOND_MS = 120;
+const FLIGHT_PER_X_MS = 120;
 const LANDING_EFFECT_MS = 280;
 const LANDING_SETTLE_MS = 220;
-const AUTO_GAP_MS = 180;
+const CHALLENGE_TOLERANCE = 1.0;
+const MIN_EXPLORE_POINTS = 2;
+const RANDOM_SLOPE_RANGE = { min: 3, max: 15 };
+const RANDOM_INTERCEPT_RANGE = { min: 1, max: 20 };
 
-// Canvases
 const cannonCanvas = document.getElementById('cannonCanvas');
 const cannonCtx = cannonCanvas.getContext('2d');
 const graphCanvas = document.getElementById('graphCanvas');
 const graphCtx = graphCanvas.getContext('2d');
 const graphTooltip = document.getElementById('graphTooltip');
 const graphTooltipValue = document.getElementById('graphTooltipValue');
-const formulaOverlay = document.getElementById('formulaOverlay');
-const speedSlider = document.getElementById('speedSlider');
-const speedValue = document.getElementById('speedValue');
-const autoCountInput = document.getElementById('autoCountInput');
-const autoCancelBtn = document.getElementById('autoCancelBtn');
+const stageButtons = {
+  explore: document.getElementById('stageExploreBtn'),
+  predict: document.getElementById('stagePredictBtn'),
+  challenge: document.getElementById('stageChallengeBtn'),
+};
+const sceneChip = document.getElementById('sceneChip');
+const stageTitle = document.getElementById('stageTitle');
+const stageDescription = document.getElementById('stageDescription');
+const missionChip = document.getElementById('missionChip');
+const celebration = document.getElementById('celebration');
+const controlCard = document.querySelector('.control-card');
+const scoreBadge = document.getElementById('scoreBadge');
+const trialBadge = document.getElementById('trialBadge');
+const forceFieldLabel = document.getElementById('forceFieldLabel');
+const forceInput = document.getElementById('forceInput');
+const predictionField = document.getElementById('predictionField');
+const predictionInput = document.getElementById('predictionInput');
+const quickValues = document.getElementById('quickValues');
+const fireBtn = document.getElementById('fireBtn');
+const nextStageBtn = document.getElementById('nextStageBtn');
+const resetBtn = document.getElementById('resetBtn');
+const resultNote = document.getElementById('resultNote');
+const guessInput = document.getElementById('guessInput');
 const dataBody = document.getElementById('dataBody');
-let graphHitPoints = [];
-let hoveredGraphPointId = null;
-let selectedTablePointId = null;
-let editingFormulaParam = null;
-let formulaParamDraft = '';
 
-// ══════════════ SEEDED RANDOM ══════════════
+const stageMessages = {
+  explore: { text: '', tone: 'warning' },
+  predict: { text: '', tone: 'warning' },
+  challenge: { text: '', tone: 'warning' },
+};
+
 function seededRandom(seed) {
   let h = (seed * 2654435761) >>> 0;
   h = ((h ^ (h >>> 16)) * 2246822519) >>> 0;
   h = ((h ^ (h >>> 13)) * 3266489917) >>> 0;
   h = (h ^ (h >>> 16)) >>> 0;
   return h / 4294967296;
+}
+
+function roundX(value) {
+  return Math.round(value * X_PRECISION) / X_PRECISION;
+}
+
+function roundY(value) {
+  return Math.round(value * 100) / 100;
+}
+
+function randomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function applyRandomLinearRule() {
+  funcType = 'linear';
+  paramA = randomInt(RANDOM_SLOPE_RANGE.min, RANDOM_SLOPE_RANGE.max);
+  paramB = randomInt(RANDOM_INTERCEPT_RANGE.min, RANDOM_INTERCEPT_RANGE.max);
+  paramC = 0;
+  noiseLevel = 0;
 }
 
 function calcBaseDistanceValue(x) {
@@ -308,30 +551,26 @@ function calcBaseDistanceValue(x) {
 
 function calcDistance(x) {
   const base = calcBaseDistanceValue(x);
-
-  if (noiseLevel === 0) return Math.round(base * 10) / 10;
-
+  if (noiseLevel === 0) return roundY(base);
   const seed = Math.round(x * 100);
   const noise = (seededRandom(seed) - 0.5) * 2 * noiseLevel;
-  return Math.round((base + noise) * 10) / 10;
+  return roundY(base + noise);
 }
 
 function getReachDistanceRange() {
-  const sampleXs = [0, maxTime];
+  const sampleXs = [0, maxInput];
   if (funcType === 'quadratic' && paramA !== 0) {
     const vertexX = -paramB / (2 * paramA);
-    if (vertexX > 0 && vertexX < maxTime) sampleXs.push(vertexX);
+    if (vertexX > 0 && vertexX < maxInput) sampleXs.push(vertexX);
   }
 
   const values = sampleXs.map(calcBaseDistanceValue);
   let min = Math.min(...values);
   let max = Math.max(...values);
-
   if (noiseLevel > 0) {
     min -= noiseLevel;
     max += noiseLevel;
   }
-
   const span = Math.max(max - min, 1);
   const pad = Math.max(span * 0.12, 5);
   return {
@@ -350,7 +589,513 @@ function distanceToSceneX(value, sceneRange, width) {
   return left + ratio * (right - left);
 }
 
-function drawCannonDistanceMarkers(c, W, H, sceneRange) {
+function getGroundY(H) {
+  const preferred = H * 0.7;
+  if (!controlCard || !cannonCanvas.parentElement) return preferred;
+
+  const parentRect = cannonCanvas.parentElement.getBoundingClientRect();
+  const cardRect = controlCard.getBoundingClientRect();
+  if (!parentRect.height || !cardRect.height) return preferred;
+
+  const overlayTop = cardRect.top - parentRect.top;
+  const maxGround = overlayTop - 40;
+  return Math.max(H * 0.48, Math.min(preferred, maxGround));
+}
+
+function niceDistStep(max) {
+  const rough = Math.max(max / 5, 0.1);
+  const mag = Math.pow(10, Math.floor(Math.log10(rough)));
+  const res = rough / mag;
+  if (res <= 1.5) return mag;
+  if (res <= 3.5) return 2 * mag;
+  if (res <= 7.5) return 5 * mag;
+  return 10 * mag;
+}
+
+function formatN(v) {
+  const normalized = Math.abs(v) < 1e-9 ? 0 : v;
+  if (Number.isInteger(normalized)) return normalized.toString();
+  if (Math.abs(normalized) >= 100) return Math.round(normalized).toString();
+  const roundedTenth = Math.round(normalized * 10) / 10;
+  if (Math.abs(normalized - roundedTenth) < 1e-9) return roundedTenth.toFixed(1);
+  return normalized.toFixed(2);
+}
+
+function formatX(v) {
+  return roundX(v).toFixed(2);
+}
+
+function formatY(v) {
+  return roundY(v).toFixed(2);
+}
+
+function formatFormulaValue(v) {
+  if (!Number.isFinite(v)) return '0';
+  if (Number.isInteger(v)) return v.toString();
+  if (Math.abs(v) >= 1000) return Math.round(v).toString();
+  return v.toFixed(1);
+}
+
+function getFormulaText(type, a, b, c) {
+  if (type === 'linear') return `y = ${formatFormulaValue(a)} × x + ${formatFormulaValue(b)}`;
+  if (type === 'quadratic') return `y = ${formatFormulaValue(a)} × x × x + ${formatFormulaValue(b)} × x + ${formatFormulaValue(c)}`;
+  return `y = ${formatFormulaValue(a)} × √x + ${formatFormulaValue(b)}`;
+}
+
+function clearStageMessages() {
+  Object.keys(stageMessages).forEach(stage => {
+    stageMessages[stage] = { text: '', tone: 'warning' };
+  });
+}
+
+function setStageMessage(stage, text, tone = 'warning') {
+  stageMessages[stage] = { text, tone };
+  if (stage === currentStage) updateResultNote();
+}
+
+function getDefaultStageMessage() {
+  if (currentStage === 'explore') {
+    return '추천값 0.5, 1.0, 1.5, 2.0부터 시작해 보세요.';
+  }
+  if (currentStage === 'predict') {
+    return '새로운 x 값의 결과를 먼저 예측한 뒤 발사해 확인해 보세요.';
+  }
+  return '목표 깃발을 보며 어떤 x가 맞을지 추측해 보세요.';
+}
+
+function updateResultNote() {
+  const info = stageMessages[currentStage] || { text: '', tone: 'warning' };
+  resultNote.textContent = info.text || getDefaultStageMessage();
+  resultNote.className = `result-note ${info.tone || 'warning'}`;
+}
+
+function getScore() {
+  return Number(predictStageCompleted) + Number(challengeStageCompleted);
+}
+
+function updateScoreBadge() {
+  if (scoreBadge) scoreBadge.textContent = `점수 ${getScore()} / 2`;
+  if (trialBadge) trialBadge.textContent = `시행 ${dataPoints.length}회`;
+}
+
+function hideCelebration() {
+  if (!celebration) return;
+  celebration.style.display = 'none';
+}
+
+function showCelebration() {
+  if (!celebration) return;
+  celebration.style.display = 'block';
+  celebration.style.animation = 'none';
+  void celebration.offsetWidth;
+  celebration.style.animation = 'celebPop .6s ease-out';
+  setTimeout(() => {
+    celebration.style.display = 'none';
+  }, 2500);
+}
+
+function isStageUnlocked(stage) {
+  if (stage === 'explore') return !exploreLocked;
+  if (stage === 'predict') return predictionUnlocked;
+  return challengeUnlocked;
+}
+
+function buildCandidateXs(step = 0.1, min = 0.5, max = maxInput) {
+  const values = [];
+  const start = Math.round(min * 100);
+  const end = Math.round(max * 100);
+  const stepInt = Math.max(1, Math.round(step * 100));
+  for (let raw = start; raw <= end; raw += stepInt) {
+    values.push(roundX(raw / 100));
+  }
+  return values;
+}
+
+function getUsedXKeys() {
+  return new Set(dataPoints.map(point => formatX(point.x)));
+}
+
+function pickMissionX() {
+  const used = getUsedXKeys();
+  const candidates = buildCandidateXs(0.1).filter(value => !used.has(formatX(value)));
+  const pool = candidates.length ? candidates : buildCandidateXs(0.1);
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function ensurePredictionMission(forceNew = false) {
+  if (predictionMission && !forceNew) return predictionMission;
+  const x = pickMissionX();
+  predictionMission = {
+    x,
+    completed: false,
+    predictedY: null,
+    actualY: null,
+    error: null,
+  };
+  predictionInput.value = '';
+  forceInput.value = formatX(x);
+  return predictionMission;
+}
+
+function ensureChallengeMission(forceNew = false) {
+  if (challengeMission && !forceNew) return challengeMission;
+  const x = pickMissionX();
+  challengeMission = {
+    targetX: x,
+    targetY: calcDistance(x),
+    attempts: 0,
+    solved: false,
+  };
+  forceInput.value = '';
+  return challengeMission;
+}
+
+function getStageInfo(stage) {
+  if (stage === 'explore') {
+    return {
+      title: '1단계 탐색',
+      description: '힘 x를 바꾸며 도달 거리 y가 어떻게 달라지는지 먼저 관찰해 보세요.',
+      scene: '여러 힘 x를 넣어 도달 거리 y를 관찰해 보세요.',
+      mission: '추천 입력 0.50 · 1.00 · 1.50 · 2.00',
+      fireLabel: '발사하기',
+    };
+  }
+  if (stage === 'predict') {
+    const mission = ensurePredictionMission();
+    return {
+      title: '2단계 예측',
+      description: '새로운 x 값을 보고 y를 먼저 예상한 뒤, 실제 발사 결과와 비교해 보세요.',
+      scene: '예상한 값과 실제 결과의 차이를 확인해 보세요.',
+      mission: `예측 x = ${formatX(mission.x)}`,
+      fireLabel: '예측 확인',
+    };
+  }
+  const mission = ensureChallengeMission();
+    return {
+      title: '3단계 도전',
+      description: '왼쪽 목표 깃발을 보며, 목표 거리 y를 맞출 힘 x를 추측해 보세요.',
+      scene: `목표 깃발은 ${formatY(mission.targetY)}m 지점에 있습니다.`,
+      mission: `목표 ${formatY(mission.targetY)}m`,
+      fireLabel: '목표 도전',
+    };
+  }
+
+function updateStageUI() {
+  const info = getStageInfo(currentStage);
+  const busy = animating;
+
+  Object.entries(stageButtons).forEach(([stage, button]) => {
+    const unlocked = isStageUnlocked(stage);
+    button.classList.toggle('active', stage === currentStage);
+    button.disabled = busy || !unlocked;
+  });
+
+  stageTitle.textContent = info.title;
+  stageDescription.textContent = info.description;
+  sceneChip.textContent = info.scene;
+  missionChip.textContent = info.mission;
+  missionChip.classList.toggle('hidden', !info.mission);
+
+  const inPredict = currentStage === 'predict';
+  const inChallenge = currentStage === 'challenge';
+
+  predictionField.classList.toggle('hidden', !inPredict);
+  quickValues.classList.toggle('hidden', inPredict || inChallenge);
+  forceFieldLabel.textContent = inPredict ? '확인할 힘 x' : '힘 x';
+  forceInput.readOnly = inPredict;
+  forceInput.disabled = busy;
+  predictionInput.disabled = busy;
+  fireBtn.disabled = busy;
+  resetBtn.disabled = busy;
+
+  if (inPredict) {
+    const mission = ensurePredictionMission();
+    forceInput.value = formatX(mission.x);
+    forceInput.placeholder = '';
+  } else if (!busy && !forceInput.value && !inChallenge) {
+    forceInput.placeholder = '예: 1.50';
+  } else if (inChallenge && !busy) {
+    forceInput.placeholder = '목표를 맞출 x를 입력';
+  }
+
+  fireBtn.textContent = info.fireLabel;
+
+  if (currentStage === 'explore') {
+    nextStageBtn.textContent = '예측 단계로';
+    nextStageBtn.disabled = busy || !predictionUnlocked;
+    nextStageBtn.style.display = '';
+  } else if (currentStage === 'predict') {
+    nextStageBtn.textContent = predictionMission && predictionMission.completed ? '도전 단계로' : '새 예측 값';
+    nextStageBtn.disabled = busy;
+    nextStageBtn.style.display = '';
+  } else {
+    nextStageBtn.style.display = 'none';
+  }
+
+  updateResultNote();
+  updateScoreBadge();
+  drawCannon();
+  drawGraph();
+}
+
+function renderQuickValues() {
+  quickValues.innerHTML = '';
+  QUICK_VALUES.filter(value => value <= maxInput).forEach(value => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'quick-chip';
+    btn.textContent = `${formatX(value)}`;
+    btn.addEventListener('click', () => {
+      if (animating || currentStage === 'predict') return;
+      forceInput.value = formatX(value);
+      forceInput.focus();
+      forceInput.select();
+    });
+    quickValues.appendChild(btn);
+  });
+}
+
+function parseURL() {
+  const p = new URLSearchParams(location.search);
+  applyRandomLinearRule();
+  if (p.has('type')) funcType = p.get('type');
+  if (p.has('a')) paramA = parseFloat(p.get('a'));
+  if (p.has('b')) paramB = parseFloat(p.get('b'));
+  if (p.has('c')) paramC = parseFloat(p.get('c'));
+  if (p.has('noise')) noiseLevel = parseInt(p.get('noise'), 10) || 0;
+
+  if (p.has('max')) maxInput = Math.min(parseFloat(p.get('max')) || 5, 5);
+
+  document.getElementById('setType').value = funcType;
+  document.getElementById('setA').value = paramA;
+  document.getElementById('setB').value = paramB;
+  document.getElementById('setC').value = paramC;
+  document.getElementById('setNoise').value = noiseLevel;
+  document.getElementById('setMax').value = maxInput;
+  forceInput.max = String(maxInput);
+  updatePreview();
+}
+
+function resize(canvas, ctx) {
+  const wrap = canvas.parentElement;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = wrap.clientWidth * dpr;
+  canvas.height = wrap.clientHeight * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function resizeAll() {
+  resize(cannonCanvas, cannonCtx);
+  resize(graphCanvas, graphCtx);
+}
+
+function validateForceInput(rawValue) {
+  const value = parseFloat(rawValue);
+  if (!Number.isFinite(value)) return { ok: false, message: '힘 x 값을 먼저 입력해 주세요.' };
+  if (value < 0.1 || value > maxInput) {
+    return { ok: false, message: `힘 x는 0.10부터 ${formatX(maxInput)} 사이여야 합니다.` };
+  }
+  return { ok: true, value: roundX(value) };
+}
+
+function validatePredictionInput(rawValue) {
+  const value = parseFloat(rawValue);
+  if (!Number.isFinite(value)) return { ok: false, message: '예상 거리 y를 먼저 적어 주세요.' };
+  return { ok: true, value: roundY(value) };
+}
+
+function handleFireAction() {
+  if (animating) return;
+
+  if (currentStage === 'predict') {
+    const mission = ensurePredictionMission();
+    const predicted = validatePredictionInput(predictionInput.value);
+    if (!predicted.ok) {
+      setStageMessage('predict', predicted.message, 'danger');
+      predictionInput.focus();
+      updateStageUI();
+      return;
+    }
+    launchShot({
+      stage: 'predict',
+      x: mission.x,
+      predictedY: predicted.value,
+      targetY: null,
+    });
+    return;
+  }
+
+  const validation = validateForceInput(forceInput.value);
+  if (!validation.ok) {
+    setStageMessage(currentStage, validation.message, 'danger');
+    forceInput.focus();
+    updateStageUI();
+    return;
+  }
+
+  if (currentStage === 'challenge') {
+    const mission = ensureChallengeMission();
+    launchShot({
+      stage: 'challenge',
+      x: validation.value,
+      predictedY: null,
+      targetY: mission.targetY,
+    });
+    return;
+  }
+
+  launchShot({
+    stage: 'explore',
+    x: validation.value,
+    predictedY: null,
+    targetY: null,
+  });
+}
+
+function launchShot({ stage, x, predictedY, targetY }) {
+  if (animating) return;
+  const y = calcDistance(x);
+  const sceneRange = getReachDistanceRange();
+
+  animating = true;
+  animData = {
+    x,
+    y,
+    stage,
+    predictedY,
+    targetY,
+    startTime: performance.now(),
+    duration: (FLIGHT_BASE_MS + x * FLIGHT_PER_X_MS) / animationSpeed,
+    landingEffectSec: (LANDING_EFFECT_MS / animationSpeed) / 1000,
+    landingSettleMs: LANDING_SETTLE_MS / animationSpeed,
+    sceneRange,
+    landed: false,
+    particles: [],
+  };
+  updateStageUI();
+  requestAnimationFrame(animateFrame);
+}
+
+function handleShotComplete(point) {
+  dataPoints.push(point);
+  renderDataTable();
+  drawGraph();
+
+  if (point.stage === 'explore') {
+    const totalExplore = dataPoints.filter(item => item.stage === 'explore').length;
+    if (totalExplore >= MIN_EXPLORE_POINTS) {
+      predictionUnlocked = true;
+      challengeUnlocked = true;
+      setStageMessage('explore', `힘 ${formatX(point.x)}에서 ${formatY(point.y)}m를 확인했습니다. 이제 예측과 도전 단계를 모두 선택할 수 있습니다.`, 'warning');
+    } else {
+      setStageMessage('explore', `힘 ${formatX(point.x)}으로 쏘니 ${formatY(point.y)}m 지점에 도달했습니다. 다른 x 값도 넣어 보며 패턴을 더 찾아보세요.`, totalExplore >= 3 ? 'warning' : 'success');
+    }
+  }
+
+  if (point.stage === 'predict') {
+    predictionMission.completed = true;
+    predictionMission.predictedY = point.predictedY;
+    predictionMission.actualY = point.y;
+    predictionMission.error = point.predictionError;
+    challengeUnlocked = true;
+    predictStageCompleted = true;
+    if (point.predictionError === 0) showCelebration();
+    setStageMessage('predict', `x = ${formatX(point.x)}일 때 예상은 ${formatY(point.predictedY)}m, 실제는 ${formatY(point.y)}m였습니다. 오차는 ${formatY(point.predictionError)}m입니다.`, point.predictionError <= 2 ? 'success' : 'warning');
+  }
+
+  if (point.stage === 'challenge') {
+    challengeMission.attempts += 1;
+    const absDelta = Math.abs(point.targetDelta);
+    if (point.targetDelta === 0) {
+      challengeMission.solved = true;
+      challengeStageCompleted = true;
+      showCelebration();
+      setStageMessage('challenge', `성공입니다. 힘 ${formatX(point.x)}으로 목표 ${formatY(point.targetY)}m를 거의 정확히 맞혔습니다.`, 'success');
+    } else if (absDelta <= CHALLENGE_TOLERANCE) {
+      const relation = point.targetDelta < 0 ? '부족했습니다' : '초과했습니다';
+      setStageMessage('challenge', `아주 가깝습니다. 힘 ${formatX(point.x)}으로 쏘니 ${formatY(point.y)}m였습니다. 목표 ${formatY(point.targetY)}m보다 ${formatY(absDelta)}m ${relation}.`, 'warning');
+    } else {
+      const relation = point.targetDelta < 0 ? '부족했습니다' : '초과했습니다';
+      setStageMessage('challenge', `힘 ${formatX(point.x)}으로 쏘니 ${formatY(point.y)}m였습니다. 목표 ${formatY(point.targetY)}m보다 ${formatY(absDelta)}m ${relation}.`, 'warning');
+    }
+  }
+
+  updateStageUI();
+}
+
+function resetExperiment(clearGuess = true) {
+  clearTimeout(settleTimeoutId);
+  settleTimeoutId = null;
+  hideCelebration();
+  animating = false;
+  animData = null;
+  dataPoints = [];
+  nextId = 1;
+  hoveredGraphPointId = null;
+  selectedPointId = null;
+  predictionUnlocked = false;
+  challengeUnlocked = false;
+  predictionMission = null;
+  challengeMission = null;
+  exploreLocked = false;
+  predictStageCompleted = false;
+  challengeStageCompleted = false;
+  currentStage = 'explore';
+  forceInput.value = '';
+  predictionInput.value = '';
+  if (clearGuess) guessInput.value = '';
+  clearStageMessages();
+  renderQuickValues();
+  renderDataTable();
+  hideGraphTooltip();
+  updateStageUI();
+}
+
+function handleNextStageAction() {
+  if (animating) return;
+  if (currentStage === 'explore') {
+    if (!predictionUnlocked) return;
+    exploreLocked = true;
+    currentStage = 'predict';
+    ensurePredictionMission();
+    updateStageUI();
+    predictionInput.focus();
+    return;
+  }
+  if (currentStage === 'predict') {
+    if (predictionMission && predictionMission.completed) {
+      currentStage = 'challenge';
+      ensureChallengeMission();
+      updateStageUI();
+      forceInput.focus();
+      return;
+    }
+    ensurePredictionMission(true);
+    setStageMessage('predict', `새 예측 문제를 준비했습니다. x = ${formatX(predictionMission.x)}일 때의 y를 먼저 예상해 보세요.`, 'warning');
+    updateStageUI();
+    predictionInput.focus();
+    return;
+  }
+  ensureChallengeMission(true);
+    setStageMessage('challenge', `새 목표를 만들었습니다. 이번에는 목표 ${formatY(challengeMission.targetY)}m를 맞혀 보세요.`, 'warning');
+  updateStageUI();
+  forceInput.focus();
+}
+
+function setStage(stage) {
+  if (!isStageUnlocked(stage) || animating) return;
+  if (stage !== 'explore' && currentStage === 'explore') {
+    exploreLocked = true;
+  }
+  currentStage = stage;
+  if (stage === 'predict') ensurePredictionMission();
+  if (stage === 'challenge') ensureChallengeMission();
+  updateStageUI();
+  if (stage === 'predict') predictionInput.focus();
+  if (stage !== 'predict') forceInput.focus();
+}
+
+function drawCannonDistanceMarkers(c, W, groundY, sceneRange) {
   const span = sceneRange.displayMax - sceneRange.displayMin;
   const step = niceDistStep(span);
   c.font = '10px "Noto Sans KR"';
@@ -360,339 +1105,130 @@ function drawCannonDistanceMarkers(c, W, H, sceneRange) {
   for (let d = start; d <= sceneRange.displayMax + step * 0.5; d += step) {
     const px = distanceToSceneX(d, sceneRange, W);
     c.beginPath();
-    c.moveTo(px, H * 0.7 - 4);
-    c.lineTo(px, H * 0.7 + 4);
+    c.moveTo(px, groundY - 4);
+    c.lineTo(px, groundY + 4);
     c.strokeStyle = '#475569';
     c.lineWidth = 1;
     c.stroke();
-    c.fillText(`${formatN(d)}m`, px, H * 0.7 + 16);
+    c.fillText(`${formatY(d)}m`, px, groundY + 16);
   }
 }
 
-// ══════════════ INIT ══════════════
-function init() {
-  parseURL();
-  updateSpeedUI();
-  renderPowerBarScale();
-  resizeAll();
-  drawCannon();
-  drawGraph();
-  window.addEventListener('resize', () => {
-    resizeAll();
-    hideGraphTooltip();
-    drawCannon();
-    drawGraph();
+function drawTargetMarker(c, px, groundY, value) {
+  c.save();
+  c.setLineDash([6, 4]);
+  c.strokeStyle = 'rgba(59,130,246,.9)';
+  c.lineWidth = 2;
+  c.beginPath();
+  c.moveTo(px, groundY);
+  c.lineTo(px, groundY - 42);
+  c.stroke();
+  c.setLineDash([]);
+
+  c.fillStyle = '#3b82f6';
+  c.beginPath();
+  c.moveTo(px, groundY - 42);
+  c.lineTo(px + 18, groundY - 34);
+  c.lineTo(px, groundY - 26);
+  c.fill();
+
+  c.beginPath();
+  c.arc(px, groundY, 8, 0, Math.PI * 2);
+  c.strokeStyle = 'rgba(59,130,246,.5)';
+  c.lineWidth = 3;
+  c.stroke();
+
+  c.fillStyle = '#dbeafe';
+  c.font = '11px "Jua"';
+  c.textAlign = 'center';
+  c.fillText(`목표 ${formatY(value)}m`, px, groundY - 48);
+  c.restore();
+}
+
+function drawFlag(c, px, groundY, dist) {
+  c.strokeStyle = '#94a3b8';
+  c.lineWidth = 1.5;
+  c.beginPath();
+  c.moveTo(px, groundY);
+  c.lineTo(px, groundY - 28);
+  c.stroke();
+
+  c.fillStyle = '#ef4444';
+  c.beginPath();
+  c.moveTo(px, groundY - 28);
+  c.lineTo(px + 14, groundY - 22);
+  c.lineTo(px, groundY - 16);
+  c.fill();
+
+  c.fillStyle = '#f1f5f9';
+  c.font = '10px "Jua"';
+  c.textAlign = 'center';
+  c.fillText(`${formatY(dist)}m`, px, groundY - 32);
+}
+
+function drawCannonBody(c, groundY) {
+  const cx = 30;
+  const cy = groundY;
+
+  c.beginPath();
+  c.arc(cx, cy, 14, 0, Math.PI * 2);
+  c.fillStyle = '#64748b';
+  c.fill();
+  c.strokeStyle = '#94a3b8';
+  c.lineWidth = 2;
+  c.stroke();
+
+  c.save();
+  c.translate(cx, cy - 8);
+  c.rotate(-Math.PI / 6);
+  c.fillStyle = '#475569';
+  c.fillRect(0, -6, 36, 12);
+  c.strokeStyle = '#64748b';
+  c.lineWidth = 1;
+  c.strokeRect(0, -6, 36, 12);
+  c.restore();
+}
+
+function drawCannonSceneBase(c, W, H, sceneRange) {
+  const groundY = getGroundY(H);
+  c.clearRect(0, 0, W, H);
+  const skyGrad = c.createLinearGradient(0, 0, 0, groundY);
+  skyGrad.addColorStop(0, '#1e3a5f');
+  skyGrad.addColorStop(1, '#0f172a');
+  c.fillStyle = skyGrad;
+  c.fillRect(0, 0, W, groundY);
+
+  const grassGrad = c.createLinearGradient(0, groundY, 0, H);
+  grassGrad.addColorStop(0, '#166534');
+  grassGrad.addColorStop(1, '#14532d');
+  c.fillStyle = grassGrad;
+  c.fillRect(0, groundY, W, H - groundY);
+
+  c.strokeStyle = '#22c55e';
+  c.lineWidth = 2;
+  c.beginPath();
+  c.moveTo(0, groundY);
+  c.lineTo(W, groundY);
+  c.stroke();
+
+  drawCannonDistanceMarkers(c, W, groundY, sceneRange);
+  drawCannonBody(c, groundY);
+
+  dataPoints.forEach(point => {
+    const px = distanceToSceneX(point.y, sceneRange, W);
+    drawFlag(c, px, groundY, point.y);
   });
 
-  // Keyboard
-  document.addEventListener('keydown', e => {
-    if (e.code === 'Space' && !isCharging && !animating && !autoRunning) {
-      e.preventDefault();
-      startCharge();
-    }
-  });
-  document.addEventListener('keyup', e => {
-    if (e.code === 'Space' && isCharging) {
-      e.preventDefault();
-      releaseCharge();
-    }
-  });
-  speedSlider.addEventListener('input', e => {
-    animationSpeed = Math.min(3, Math.max(1, parseFloat(e.target.value) || 1));
-    updateSpeedUI();
-  });
-  if (formulaOverlay) formulaOverlay.addEventListener('click', handleFormulaOverlayClick);
-  if (dataBody) {
-    dataBody.addEventListener('click', handleDataTableClick);
-    dataBody.addEventListener('keydown', handleDataTableKeydown);
-  }
-  graphCanvas.addEventListener('mousemove', handleGraphHover);
-  graphCanvas.addEventListener('click', handleGraphClick);
-  graphCanvas.addEventListener('mouseleave', clearGraphHover);
-  updateAutoButton();
-}
-
-function updateSpeedUI() {
-  animationSpeed = Math.min(3, Math.max(1, animationSpeed || 1));
-  if (speedSlider) speedSlider.value = String(animationSpeed);
-  let label = '보통';
-  if (animationSpeed > 1) label = '빠름';
-  if (speedValue) speedValue.textContent = `${label} ${animationSpeed.toFixed(1)}x`;
-}
-
-function renderPowerBarScale() {
-  const scale = document.getElementById('powerBarScale');
-  if (!scale) return;
-  scale.innerHTML = '';
-  for (let sec = 1; sec < Math.ceil(maxTime); sec++) {
-    if (sec >= maxTime) break;
-    const tick = document.createElement('div');
-    tick.className = 'power-bar-tick';
-    tick.style.left = `${(sec / maxTime) * 100}%`;
-    tick.innerHTML = `<span>${sec}s</span>`;
-    scale.appendChild(tick);
+  if (currentStage === 'challenge' && challengeMission) {
+    const targetX = distanceToSceneX(challengeMission.targetY, sceneRange, W);
+    drawTargetMarker(c, targetX, groundY, challengeMission.targetY);
   }
 }
 
-function parseURL() {
-  const p = new URLSearchParams(location.search);
-  if (p.has('type')) funcType = p.get('type');
-  if (p.has('a')) paramA = parseFloat(p.get('a'));
-  if (p.has('b')) paramB = parseFloat(p.get('b'));
-  if (p.has('c')) paramC = parseFloat(p.get('c'));
-  if (p.has('noise')) noiseLevel = parseInt(p.get('noise'));
-  if (p.has('max')) maxTime = Math.min(parseFloat(p.get('max')), 5);
-  // Sync settings UI
-  document.getElementById('setType').value = funcType;
-  document.getElementById('setA').value = paramA;
-  document.getElementById('setB').value = paramB;
-  document.getElementById('setC').value = paramC;
-  document.getElementById('setNoise').value = noiseLevel;
-  document.getElementById('setMax').value = maxTime;
-  updatePreview();
-  updateFormulaOverlay();
-}
-
-function resizeAll() {
-  resize(cannonCanvas, cannonCtx);
-  resize(graphCanvas, graphCtx);
-}
-
-function resize(cvs, c) {
-  const wrap = cvs.parentElement;
-  const dpr = window.devicePixelRatio || 1;
-  cvs.width = wrap.clientWidth * dpr;
-  cvs.height = wrap.clientHeight * dpr;
-  c.setTransform(dpr, 0, 0, dpr, 0, 0);
-}
-
-// ══════════════ INPUT MODE ══════════════
-// ══════════════ CHARGING ══════════════
-function startCharge() {
-  isCharging = true;
-  chargeStart = performance.now();
-  chargeTime = 0;
-  lastChargeCueSecond = 0;
-  document.getElementById('powerBarWrap').style.display = 'block';
-  document.getElementById('instruction').style.display = 'none';
-  updateCharge();
-}
-
-function updateCharge() {
-  if (!isCharging) return;
-  const elapsed = (performance.now() - chargeStart) / 1000;
-  chargeTime = Math.min(elapsed, maxTime);
-  const pct = (chargeTime / maxTime) * 100;
-
-  const fill = document.getElementById('powerBarFill');
-  fill.style.width = pct + '%';
-  // Color gradient: green → yellow → red
-  if (pct < 50) fill.style.background = `linear-gradient(90deg, #10b981, #f59e0b)`;
-  else fill.style.background = `linear-gradient(90deg, #10b981, #f59e0b, #ef4444)`;
-
-  document.getElementById('powerBarLabel').textContent = chargeTime.toFixed(2) + '초';
-
-  const reachedSecond = Math.floor(chargeTime);
-  if (reachedSecond > lastChargeCueSecond) {
-    pulsePowerBar();
-    lastChargeCueSecond = reachedSecond;
-  }
-
-  if (chargeTime < maxTime) {
-    chargeRAF = requestAnimationFrame(updateCharge);
-  }
-}
-
-function pulsePowerBar() {
-  const wrap = document.getElementById('powerBarWrap');
-  wrap.classList.remove('pulse');
-  void wrap.offsetWidth;
-  wrap.classList.add('pulse');
-}
-
-function releaseCharge() {
-  isCharging = false;
-  cancelAnimationFrame(chargeRAF);
-  const t = Math.round(chargeTime * 10) / 10;
-  document.getElementById('powerBarWrap').style.display = 'none';
-  if (t > 0) fire(t);
-}
-
-function buildAutoShotQueue(requestedCount) {
-  const maxTenths = Math.max(1, Math.round(maxTime * 10));
-  const usedTimes = new Set(dataPoints.map(point => point.x.toFixed(1)));
-  const values = [];
-  for (let tenth = 1; tenth <= maxTenths; tenth++) {
-    const value = tenth / 10;
-    if (!usedTimes.has(value.toFixed(1))) {
-      values.push(value);
-    }
-  }
-  for (let i = values.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [values[i], values[j]] = [values[j], values[i]];
-  }
-  return values.slice(0, Math.min(requestedCount, values.length));
-}
-
-function clearAutoNextTimeout() {
-  if (autoNextTimeoutId !== null) {
-    clearTimeout(autoNextTimeoutId);
-    autoNextTimeoutId = null;
-  }
-}
-
-function scheduleNextAutoShot(delayMs) {
-  clearAutoNextTimeout();
-  autoNextTimeoutId = setTimeout(() => {
-    autoNextTimeoutId = null;
-    runNextAutoShot();
-  }, delayMs);
-}
-
-function finishAutoFire() {
-  clearAutoNextTimeout();
-  autoQueue = [];
-  autoRunning = false;
-  autoPaused = false;
-  autoTotalShots = 0;
-  updateAutoButton();
-}
-
-function updateAutoButton() {
-  const btn = document.getElementById('autoBtn');
-  if (!btn) return;
-  if (autoRunning) {
-    const fired = autoTotalShots - autoQueue.length;
-    btn.textContent = autoPaused ? `이어하기 ${fired}/${autoTotalShots}` : `일시정지 ${fired}/${autoTotalShots}`;
-    btn.disabled = false;
-    autoCountInput.disabled = true;
-    autoCancelBtn.disabled = false;
-  } else {
-    btn.textContent = '자동 발사';
-    btn.disabled = false;
-    autoCountInput.disabled = false;
-    autoCancelBtn.disabled = true;
-  }
-}
-
-function startAutoFire() {
-  if (animating || isCharging) return;
-  const requestedCount = Math.min(Math.max(parseInt(autoCountInput.value, 10) || 10, 1), 50);
-  autoCountInput.value = String(requestedCount);
-  autoQueue = buildAutoShotQueue(requestedCount);
-  if (autoQueue.length === 0) return;
-  autoTotalShots = autoQueue.length;
-  autoRunning = true;
-  autoPaused = false;
-  document.getElementById('instruction').style.display = 'none';
-  updateAutoButton();
-  runNextAutoShot();
-}
-
-function pauseAutoFire() {
-  if (!autoRunning) return;
-  autoPaused = true;
-  clearAutoNextTimeout();
-  updateAutoButton();
-}
-
-function resumeAutoFire() {
-  if (!autoRunning) return;
-  autoPaused = false;
-  updateAutoButton();
-  if (!animating) {
-    if (autoQueue.length > 0) scheduleNextAutoShot(0);
-    else finishAutoFire();
-  }
-}
-
-function toggleAutoFire() {
-  if (!autoRunning) {
-    startAutoFire();
-  } else if (autoPaused) {
-    resumeAutoFire();
-  } else {
-    pauseAutoFire();
-  }
-}
-
-function cancelAutoFire() {
-  if (!autoRunning && autoQueue.length === 0) return;
-  clearAutoNextTimeout();
-  autoQueue = [];
-  autoRunning = false;
-  autoPaused = false;
-  autoTotalShots = 0;
-  updateAutoButton();
-}
-
-function resetExperiment() {
-  cancelAutoFire();
-  if (chargeRAF) cancelAnimationFrame(chargeRAF);
-  isCharging = false;
-  chargeStart = 0;
-  chargeTime = 0;
-  lastChargeCueSecond = 0;
-  animating = false;
-  animData = null;
-  dataPoints = [];
-  nextId = 1;
-  hoveredGraphPointId = null;
-  selectedTablePointId = null;
-  hideGraphTooltip();
-
-  const powerWrap = document.getElementById('powerBarWrap');
-  const powerFill = document.getElementById('powerBarFill');
-  const powerLabel = document.getElementById('powerBarLabel');
-  if (powerWrap) {
-    powerWrap.style.display = 'none';
-    powerWrap.classList.remove('pulse');
-  }
-  if (powerFill) powerFill.style.width = '0%';
-  if (powerLabel) powerLabel.textContent = '0.00초';
-
-  document.getElementById('instruction').style.display = '';
-  renderDataTable();
-  drawCannon();
-  drawGraph();
-}
-
-function runNextAutoShot() {
-  if (!autoRunning || autoPaused || animating) return;
-  if (autoQueue.length === 0) {
-    finishAutoFire();
-    return;
-  }
-  const nextShot = autoQueue.shift();
-  updateAutoButton();
-  fire(nextShot);
-}
-
-// ══════════════ FIRE ══════════════
-function fire(x) {
-  if (animating) return;
-  const y = calcDistance(x);
-  document.getElementById('instruction').style.display = 'none';
-
-  // Animate
-  animating = true;
-  const sceneRange = getReachDistanceRange();
-  const duration = (FLIGHT_BASE_MS + x * FLIGHT_PER_SECOND_MS) / animationSpeed;
-
-  animData = {
-    x, y,
-    startTime: performance.now(),
-    duration,
-    landingEffectSec: (LANDING_EFFECT_MS / animationSpeed) / 1000,
-    landingSettleMs: LANDING_SETTLE_MS / animationSpeed,
-    sceneRange,
-    trail: [],
-    landed: false,
-    particles: []
-  };
-
-  requestAnimationFrame(animateFrame);
+function drawCannon() {
+  const W = cannonCanvas.width / (window.devicePixelRatio || 1);
+  const H = cannonCanvas.height / (window.devicePixelRatio || 1);
+  drawCannonSceneBase(cannonCtx, W, H, getReachDistanceRange());
 }
 
 function animateFrame(now) {
@@ -700,49 +1236,47 @@ function animateFrame(now) {
   const { x, y, startTime, duration, sceneRange } = animData;
   const elapsed = now - startTime;
   const progress = Math.min(elapsed / duration, 1);
-
   drawCannonFrame(progress, x, y, sceneRange);
 
   if (progress < 1) {
     requestAnimationFrame(animateFrame);
-  } else {
-    // Landing complete
-    animData.landed = true;
-    // Generate dust particles
-    animData.particles = [];
-    for (let i = 0; i < 12; i++) {
-      animData.particles.push({
-        vx: (Math.random() - 0.5) * 4,
-        vy: -Math.random() * 3 - 1,
-        life: 1,
-        size: Math.random() * 4 + 2,
-      });
-    }
-    animData.particleStart = now;
-    requestAnimationFrame(animateParticles);
-
-    // Add data point
-    dataPoints.push({ x, y, id: nextId++ });
-    renderDataTable();
-    drawGraph();
-
-    setTimeout(() => {
-      animating = false;
-      if (autoRunning) {
-        if (autoQueue.length > 0) {
-          if (!autoPaused) scheduleNextAutoShot(AUTO_GAP_MS / animationSpeed);
-        } else {
-          finishAutoFire();
-        }
-      }
-    }, animData.landingSettleMs);
+    return;
   }
+
+  animData.landed = true;
+  animData.particles = [];
+  for (let i = 0; i < 12; i++) {
+    animData.particles.push({
+      vx: (Math.random() - 0.5) * 4,
+      vy: -Math.random() * 3 - 1,
+      life: 1,
+      size: Math.random() * 4 + 2,
+    });
+  }
+  animData.particleStart = now;
+  requestAnimationFrame(animateParticles);
+
+  const point = {
+    id: nextId++,
+    x,
+    y,
+    stage: animData.stage,
+    predictedY: animData.predictedY,
+    predictionError: animData.predictedY === null ? null : roundY(Math.abs(y - animData.predictedY)),
+    targetY: animData.targetY,
+    targetDelta: animData.targetY === null ? null : roundY(y - animData.targetY),
+  };
+
+  settleTimeoutId = setTimeout(() => {
+    animating = false;
+    settleTimeoutId = null;
+    handleShotComplete(point);
+  }, animData.landingSettleMs);
 }
 
 function animateParticles(now) {
   if (!animData || !animData.landed) return;
   const elapsed = (now - animData.particleStart) / 1000;
-
   animData.particles.forEach(p => {
     p.life = Math.max(0, 1 - elapsed * 2);
   });
@@ -752,95 +1286,26 @@ function animateParticles(now) {
   if (elapsed < animData.landingEffectSec) {
     requestAnimationFrame(animateParticles);
   } else {
-    drawCannon(); // Final static frame with flag
+    drawCannon();
   }
-}
-
-// ══════════════ CANNON DRAWING ══════════════
-function drawCannon() {
-  const W = cannonCanvas.width / (window.devicePixelRatio || 1);
-  const H = cannonCanvas.height / (window.devicePixelRatio || 1);
-  const c = cannonCtx;
-  const sceneRange = getReachDistanceRange();
-  c.clearRect(0, 0, W, H);
-
-  // Sky gradient
-  const skyGrad = c.createLinearGradient(0, 0, 0, H * 0.7);
-  skyGrad.addColorStop(0, '#1e3a5f');
-  skyGrad.addColorStop(1, '#0f172a');
-  c.fillStyle = skyGrad;
-  c.fillRect(0, 0, W, H * 0.7);
-
-  // Grass
-  const grassGrad = c.createLinearGradient(0, H * 0.7, 0, H);
-  grassGrad.addColorStop(0, '#166534');
-  grassGrad.addColorStop(1, '#14532d');
-  c.fillStyle = grassGrad;
-  c.fillRect(0, H * 0.7, W, H * 0.3);
-
-  // Ground line
-  c.strokeStyle = '#22c55e';
-  c.lineWidth = 2;
-  c.beginPath(); c.moveTo(0, H * 0.7); c.lineTo(W, H * 0.7); c.stroke();
-
-  // Distance markers
-  drawCannonDistanceMarkers(c, W, H, sceneRange);
-
-  // Cannon
-  drawCannonBody(c, W, H);
-
-  // Previous landing flags
-  dataPoints.forEach(p => {
-    const px = distanceToSceneX(p.y, sceneRange, W);
-    drawFlag(c, px, H * 0.7, p.y);
-  });
 }
 
 function drawCannonFrame(progress, x, y, sceneRange, particleElapsed) {
   const W = cannonCanvas.width / (window.devicePixelRatio || 1);
   const H = cannonCanvas.height / (window.devicePixelRatio || 1);
   const c = cannonCtx;
+  const groundY = getGroundY(H);
+  drawCannonSceneBase(c, W, H, sceneRange);
 
-  // Redraw background
-  const skyGrad = c.createLinearGradient(0, 0, 0, H * 0.7);
-  skyGrad.addColorStop(0, '#1e3a5f');
-  skyGrad.addColorStop(1, '#0f172a');
-  c.fillStyle = skyGrad;
-  c.fillRect(0, 0, W, H * 0.7);
-
-  const grassGrad = c.createLinearGradient(0, H * 0.7, 0, H);
-  grassGrad.addColorStop(0, '#166534');
-  grassGrad.addColorStop(1, '#14532d');
-  c.fillStyle = grassGrad;
-  c.fillRect(0, H * 0.7, W, H * 0.3);
-
-  c.strokeStyle = '#22c55e'; c.lineWidth = 2;
-  c.beginPath(); c.moveTo(0, H * 0.7); c.lineTo(W, H * 0.7); c.stroke();
-
-  // Distance markers
-  drawCannonDistanceMarkers(c, W, H, sceneRange);
-
-  drawCannonBody(c, W, H);
-
-  // Previous flags
-  dataPoints.forEach(p => {
-    const px = distanceToSceneX(p.y, sceneRange, W);
-    drawFlag(c, px, H * 0.7, p.y);
-  });
-
-  // Projectile trajectory
   const cannonTipX = 55;
-  const cannonTipY = H * 0.7 - 22;
+  const cannonTipY = groundY - 22;
   const landX = distanceToSceneX(y, sceneRange, W);
-  const landY = H * 0.7;
-
-  // Parabolic path
+  const landY = groundY;
   const bx = progress;
   const projX = cannonTipX + (landX - cannonTipX) * bx;
   const peakH = Math.min(H * 0.35, Math.max(32, 42 + Math.abs(landX - cannonTipX) * 0.18));
   const projY = cannonTipY + (landY - cannonTipY) * bx - peakH * 4 * bx * (1 - bx);
 
-  // Trail
   if (progress < 1) {
     c.strokeStyle = 'rgba(245,158,11,0.3)';
     c.lineWidth = 2;
@@ -848,19 +1313,20 @@ function drawCannonFrame(progress, x, y, sceneRange, particleElapsed) {
     for (let t = 0; t <= bx; t += 0.02) {
       const tx = cannonTipX + (landX - cannonTipX) * t;
       const ty = cannonTipY + (landY - cannonTipY) * t - peakH * 4 * t * (1 - t);
-      if (t === 0) c.moveTo(tx, ty); else c.lineTo(tx, ty);
+      if (t === 0) c.moveTo(tx, ty);
+      else c.lineTo(tx, ty);
     }
     c.stroke();
 
-    // Projectile ball
     c.beginPath();
     c.arc(projX, projY, 6, 0, Math.PI * 2);
     c.fillStyle = '#f59e0b';
     c.fill();
-    c.strokeStyle = '#fff'; c.lineWidth = 1.5; c.stroke();
+    c.strokeStyle = '#fff';
+    c.lineWidth = 1.5;
+    c.stroke();
   }
 
-  // Particles on landing
   if (progress >= 1 && animData && animData.particles && particleElapsed !== undefined) {
     animData.particles.forEach(p => {
       if (p.life <= 0) return;
@@ -873,117 +1339,89 @@ function drawCannonFrame(progress, x, y, sceneRange, particleElapsed) {
       c.fill();
     });
     c.globalAlpha = 1;
-
-    // Landing flag
     drawFlag(c, landX, landY, y);
   }
 }
 
-function drawCannonBody(c, W, H) {
-  const cx = 30, cy = H * 0.7;
-
-  // Wheel
-  c.beginPath();
-  c.arc(cx, cy, 14, 0, Math.PI * 2);
-  c.fillStyle = '#64748b';
-  c.fill();
-  c.strokeStyle = '#94a3b8'; c.lineWidth = 2; c.stroke();
-
-  // Barrel
-  c.save();
-  c.translate(cx, cy - 8);
-  c.rotate(-Math.PI / 6);
-  c.fillStyle = '#475569';
-  c.fillRect(0, -6, 36, 12);
-  c.strokeStyle = '#64748b'; c.lineWidth = 1;
-  c.strokeRect(0, -6, 36, 12);
-  c.restore();
+function getPointBadge(stage) {
+  if (stage === 'predict') return { label: '예측', className: 'predict' };
+  if (stage === 'challenge') return { label: '도전', className: 'challenge' };
+  return { label: '탐색', className: 'explore' };
 }
 
-function drawFlag(c, px, groundY, dist) {
-  // Pole
-  c.strokeStyle = '#94a3b8'; c.lineWidth = 1.5;
-  c.beginPath(); c.moveTo(px, groundY); c.lineTo(px, groundY - 28); c.stroke();
-  // Flag
-  c.fillStyle = '#ef4444';
-  c.beginPath();
-  c.moveTo(px, groundY - 28);
-  c.lineTo(px + 14, groundY - 22);
-  c.lineTo(px, groundY - 16);
-  c.fill();
-  // Label
-  c.fillStyle = '#f1f5f9';
-  c.font = '10px "Jua"';
-  c.textAlign = 'center';
-  c.fillText(dist + 'm', px, groundY - 32);
-}
-
-function niceDistStep(max) {
-  const rough = max / 5;
-  const mag = Math.pow(10, Math.floor(Math.log10(rough)));
-  const res = rough / mag;
-  if (res <= 1.5) return mag;
-  if (res <= 3.5) return 2 * mag;
-  if (res <= 7.5) return 5 * mag;
-  return 10 * mag;
-}
-
-// ══════════════ DATA TABLE ══════════════
-function renderDataTable() {
-  const body = document.getElementById('dataBody');
-  body.innerHTML = '';
-  if (!dataPoints.some(point => point.id === selectedTablePointId)) {
-    selectedTablePointId = null;
+function getPointMemoHTML(point) {
+  const badge = getPointBadge(point.stage);
+  const parts = [`<span class="row-badge ${badge.className}">${badge.label}</span>`];
+  if (point.stage === 'predict' && point.predictedY !== null) {
+    parts.push(`오차 ${formatY(point.predictionError)}m`);
+  } else if (point.stage === 'challenge' && point.targetY !== null) {
+    const absDelta = Math.abs(point.targetDelta);
+    const relation = point.targetDelta === 0 ? '성공' : absDelta <= CHALLENGE_TOLERANCE ? `거의 맞음 (${formatY(absDelta)}m 차이)` : point.targetDelta < 0 ? `${formatY(absDelta)}m 부족` : `${formatY(absDelta)}m 초과`;
+    parts.push(`목표 ${formatY(point.targetY)}m · ${relation}`);
+  } else {
+    parts.push('관찰');
   }
-  dataPoints.forEach((p, i) => {
+  return parts.join(' ');
+}
+
+function renderDataTable() {
+  dataBody.innerHTML = '';
+  if (!dataPoints.some(point => point.id === selectedPointId)) {
+    selectedPointId = null;
+  }
+  dataPoints.forEach((point, index) => {
     const tr = document.createElement('tr');
-    tr.dataset.pointId = String(p.id);
+    tr.dataset.pointId = String(point.id);
     tr.tabIndex = 0;
-    if (i === dataPoints.length - 1) tr.className = 'new-row';
-    tr.innerHTML = `<td>${i + 1}</td><td>${p.x}</td><td>${p.y}</td>`;
-    body.appendChild(tr);
+    if (index === dataPoints.length - 1) tr.classList.add('new-row');
+    tr.innerHTML = `
+      <td>${index + 1}</td>
+      <td>${formatX(point.x)}</td>
+      <td>${formatY(point.y)}</td>
+      <td class="memo-cell">${getPointMemoHTML(point)}</td>
+    `;
+    dataBody.appendChild(tr);
   });
   updateDataTableHighlight();
-  // Auto scroll
-  const wrap = body.closest('.table-wrap');
+  const wrap = dataBody.closest('.table-wrap');
   if (wrap) wrap.scrollTop = wrap.scrollHeight;
 }
 
 function getHighlightedPointId() {
   if (hoveredGraphPointId !== null) return hoveredGraphPointId;
-  return selectedTablePointId;
+  return selectedPointId;
 }
 
 function updateDataTableHighlight() {
   const rows = document.querySelectorAll('#dataBody tr');
   const highlightedPointId = getHighlightedPointId();
   rows.forEach(row => {
-    const isHighlighted = row.dataset.pointId === String(highlightedPointId);
-    row.classList.toggle('hover-row', isHighlighted);
-    row.setAttribute('aria-selected', isHighlighted ? 'true' : 'false');
+    const highlighted = row.dataset.pointId === String(highlightedPointId);
+    row.classList.toggle('hover-row', highlighted);
+    row.setAttribute('aria-selected', highlighted ? 'true' : 'false');
   });
 }
 
 function selectDataPoint(pointId) {
-  selectedTablePointId = selectedTablePointId === pointId ? null : pointId;
+  selectedPointId = selectedPointId === pointId ? null : pointId;
   hoveredGraphPointId = null;
   hideGraphTooltip();
   updateDataTableHighlight();
-  const selectedRow = document.querySelector(`#dataBody tr[data-point-id="${selectedTablePointId}"]`);
+  const selectedRow = document.querySelector(`#dataBody tr[data-point-id="${selectedPointId}"]`);
   if (selectedRow) selectedRow.scrollIntoView({ block: 'nearest' });
   if (dataPoints.length > 0) drawGraph();
 }
 
 function handleDataTableClick(event) {
   const row = event.target.closest('tr[data-point-id]');
-  if (!row || !dataBody || !dataBody.contains(row)) return;
+  if (!row || !dataBody.contains(row)) return;
   selectDataPoint(Number(row.dataset.pointId));
 }
 
 function handleDataTableKeydown(event) {
   if (event.key !== 'Enter' && event.key !== ' ') return;
   const row = event.target.closest('tr[data-point-id]');
-  if (!row || !dataBody || !dataBody.contains(row)) return;
+  if (!row || !dataBody.contains(row)) return;
   event.preventDefault();
   selectDataPoint(Number(row.dataset.pointId));
 }
@@ -1007,7 +1445,6 @@ function findGraphPointAt(clientX, clientY) {
   return hovered;
 }
 
-// ══════════════ GRAPH ══════════════
 function drawGraph() {
   const W = graphCanvas.width / (window.devicePixelRatio || 1);
   const H = graphCanvas.height / (window.devicePixelRatio || 1);
@@ -1019,112 +1456,135 @@ function drawGraph() {
 
   if (dataPoints.length === 0) {
     clearGraphHover(true);
-    c.fillStyle = '#94a3b8'; c.font = '13px "Noto Sans KR"'; c.textAlign = 'center';
-    c.fillText('데이터가 추가되면', W / 2, H / 2 - 10);
+    c.fillStyle = '#94a3b8';
+    c.font = '13px "Noto Sans KR"';
+    c.textAlign = 'center';
+    c.fillText('실험 데이터가 쌓이면', W / 2, H / 2 - 10);
     c.fillText('그래프가 나타납니다', W / 2, H / 2 + 10);
     return;
   }
 
   const pad = { top: 25, right: 25, bottom: 40, left: 50 };
-  const xs = dataPoints.map(p => p.x);
-  const ys = dataPoints.map(p => p.y);
+  const xs = dataPoints.map(point => point.x);
+  const ys = dataPoints.map(point => point.y);
+  if (currentStage === 'challenge' && challengeMission) ys.push(challengeMission.targetY);
+
   let xMin = Math.min(0, Math.min(...xs));
-  let xMax = Math.max(...xs);
+  let xMax = Math.max(...xs, maxInput * 0.4);
   let yMin = Math.min(0, Math.min(...ys));
   let yMax = Math.max(...ys);
   const xMargin = (xMax - xMin) * 0.12 || 0.5;
   const yMargin = (yMax - yMin) * 0.12 || 5;
-  xMax += xMargin; yMax += yMargin;
+  xMax += xMargin;
+  yMax += yMargin;
+  yMin -= yMargin * 0.35;
 
   const plotW = W - pad.left - pad.right;
   const plotH = H - pad.top - pad.bottom;
-  function toX(v) { return pad.left + (v - xMin) / (xMax - xMin) * plotW; }
-  function toY(v) { return pad.top + plotH - (v - yMin) / (yMax - yMin) * plotH; }
+  function toX(v) { return pad.left + (v - xMin) / Math.max(xMax - xMin, 1) * plotW; }
+  function toY(v) { return pad.top + plotH - (v - yMin) / Math.max(yMax - yMin, 1) * plotH; }
 
-  // Grid
-  c.strokeStyle = 'rgba(51,65,85,.5)'; c.lineWidth = 0.5;
-  c.font = '10px "Noto Sans KR"'; c.fillStyle = '#64748b';
+  c.strokeStyle = 'rgba(51,65,85,.5)';
+  c.lineWidth = 0.5;
+  c.font = '10px "Noto Sans KR"';
+  c.fillStyle = '#64748b';
   const xStep = niceDistStep(xMax - xMin);
   const yStep = niceDistStep(yMax - yMin);
+
   c.textAlign = 'center';
   for (let v = 0; v <= xMax; v += xStep) {
     const px = toX(v);
-    c.beginPath(); c.moveTo(px, pad.top); c.lineTo(px, pad.top + plotH); c.stroke();
+    c.beginPath();
+    c.moveTo(px, pad.top);
+    c.lineTo(px, pad.top + plotH);
+    c.stroke();
     c.fillText(formatN(v), px, pad.top + plotH + 14);
   }
+
   c.textAlign = 'right';
   for (let v = Math.ceil(yMin / yStep) * yStep; v <= yMax; v += yStep) {
     const py = toY(v);
-    c.beginPath(); c.moveTo(pad.left, py); c.lineTo(pad.left + plotW, py); c.stroke();
-    c.fillText(formatN(v), pad.left - 5, py + 4);
+    c.beginPath();
+    c.moveTo(pad.left, py);
+    c.lineTo(pad.left + plotW, py);
+    c.stroke();
+    c.fillText(formatY(v), pad.left - 5, py + 4);
   }
 
-  // Axes
-  c.strokeStyle = '#64748b'; c.lineWidth = 1.5;
+  c.strokeStyle = '#64748b';
+  c.lineWidth = 1.5;
   if (yMin <= 0 && yMax >= 0) {
-    c.beginPath(); c.moveTo(pad.left, toY(0)); c.lineTo(pad.left + plotW, toY(0)); c.stroke();
+    c.beginPath();
+    c.moveTo(pad.left, toY(0));
+    c.lineTo(pad.left + plotW, toY(0));
+    c.stroke();
   }
   if (xMin <= 0 && xMax >= 0) {
-    c.beginPath(); c.moveTo(toX(0), pad.top); c.lineTo(toX(0), pad.top + plotH); c.stroke();
+    c.beginPath();
+    c.moveTo(toX(0), pad.top);
+    c.lineTo(toX(0), pad.top + plotH);
+    c.stroke();
   }
 
-  // Labels
-  c.fillStyle = '#94a3b8'; c.font = '11px "Noto Sans KR"'; c.textAlign = 'center';
-  c.fillText('시간 x (초)', pad.left + plotW / 2, H - 4);
-  c.save(); c.translate(10, pad.top + plotH / 2); c.rotate(-Math.PI / 2);
-  c.fillText('거리 y (m)', 0, 0); c.restore();
+  if (currentStage === 'challenge' && challengeMission) {
+    const targetPy = toY(challengeMission.targetY);
+    c.save();
+    c.setLineDash([6, 5]);
+    c.strokeStyle = 'rgba(59,130,246,.85)';
+    c.lineWidth = 1.5;
+    c.beginPath();
+    c.moveTo(pad.left, targetPy);
+    c.lineTo(pad.left + plotW, targetPy);
+    c.stroke();
+    c.setLineDash([]);
+    c.fillStyle = '#dbeafe';
+    c.textAlign = 'right';
+    c.fillText(`목표 ${formatY(challengeMission.targetY)}m`, pad.left + plotW - 6, targetPy - 6);
+    c.restore();
+  }
 
-  // Data points
+  c.fillStyle = '#94a3b8';
+  c.font = '11px "Noto Sans KR"';
+  c.textAlign = 'center';
+  c.fillText('힘 x', pad.left + plotW / 2, H - 4);
+  c.save();
+  c.translate(12, pad.top + plotH / 2);
+  c.rotate(-Math.PI / 2);
+  c.fillText('거리 y (m)', 0, 0);
+  c.restore();
+
   const highlightedPointId = getHighlightedPointId();
-  dataPoints.forEach((p, i) => {
-    const cx = toX(p.x), cy = toY(p.y);
-    const isHovered = highlightedPointId === p.id;
-    graphHitPoints.push({ id: p.id, x: p.x, y: p.y, cx, cy });
-    // Point
-    c.beginPath(); c.arc(cx, cy, 5, 0, Math.PI * 2);
-    c.fillStyle = isHovered ? '#f59e0b' : '#3b82f6'; c.fill();
-    c.strokeStyle = '#fff'; c.lineWidth = 1.5; c.stroke();
-    if (isHovered) {
-      c.beginPath(); c.arc(cx, cy, 11, 0, Math.PI * 2);
-      c.strokeStyle = 'rgba(245,158,11,.55)'; c.lineWidth = 3; c.stroke();
+  dataPoints.forEach((point, index) => {
+    const cx = toX(point.x);
+    const cy = toY(point.y);
+    const highlighted = highlightedPointId === point.id;
+    graphHitPoints.push({ id: point.id, x: point.x, y: point.y, cx, cy });
+    c.beginPath();
+    c.arc(cx, cy, 5, 0, Math.PI * 2);
+    c.fillStyle = highlighted ? '#f59e0b' : point.stage === 'challenge' ? '#10b981' : '#3b82f6';
+    c.fill();
+    c.strokeStyle = '#fff';
+    c.lineWidth = 1.5;
+    c.stroke();
+    if (highlighted) {
+      c.beginPath();
+      c.arc(cx, cy, 11, 0, Math.PI * 2);
+      c.strokeStyle = 'rgba(245,158,11,.55)';
+      c.lineWidth = 3;
+      c.stroke();
     }
-    // Pulse for latest
-    if (i === dataPoints.length - 1) {
-      c.beginPath(); c.arc(cx, cy, 10, 0, Math.PI * 2);
-      c.strokeStyle = 'rgba(245,158,11,.4)'; c.lineWidth = 2; c.stroke();
+    if (index === dataPoints.length - 1) {
+      c.beginPath();
+      c.arc(cx, cy, 10, 0, Math.PI * 2);
+      c.strokeStyle = 'rgba(245,158,11,.4)';
+      c.lineWidth = 2;
+      c.stroke();
     }
   });
 }
 
-function handleGraphHover(e) {
-  const hovered = findGraphPointAt(e.clientX, e.clientY);
-  if (!hovered) {
-    clearGraphHover();
-    return;
-  }
-
-  if (hoveredGraphPointId !== hovered.id) {
-    hoveredGraphPointId = hovered.id;
-    updateDataTableHighlight();
-    drawGraph();
-  }
-  showGraphTooltip(hovered);
-}
-
-function handleGraphClick(e) {
-  const clicked = findGraphPointAt(e.clientX, e.clientY);
-  if (!clicked) {
-    selectedTablePointId = null;
-    clearGraphHover();
-    return;
-  }
-  hoveredGraphPointId = clicked.id;
-  showGraphTooltip(clicked);
-  selectDataPoint(clicked.id);
-}
-
 function showGraphTooltip(point) {
-  graphTooltipValue.textContent = `(${formatN(point.x)}, ${formatN(point.y)})`;
+  graphTooltipValue.textContent = `(${formatX(point.x)}, ${formatY(point.y)})`;
   graphTooltip.classList.add('show');
   const body = graphCanvas.parentElement;
   const tooltipWidth = graphTooltip.offsetWidth || 110;
@@ -1145,153 +1605,44 @@ function clearGraphHover(skipRedraw) {
   hoveredGraphPointId = null;
   hideGraphTooltip();
   updateDataTableHighlight();
-  if (!skipRedraw && hadHover && dataPoints.length > 0) {
+  if (!skipRedraw && hadHover && dataPoints.length > 0) drawGraph();
+}
+
+function handleGraphHover(event) {
+  const hovered = findGraphPointAt(event.clientX, event.clientY);
+  if (!hovered) {
+    clearGraphHover();
+    return;
+  }
+  if (hoveredGraphPointId !== hovered.id) {
+    hoveredGraphPointId = hovered.id;
+    updateDataTableHighlight();
     drawGraph();
   }
+  showGraphTooltip(hovered);
 }
 
-function formatN(v) {
-  if (Number.isInteger(v)) return v.toString();
-  if (Math.abs(v) >= 100) return Math.round(v).toString();
-  return v.toFixed(1);
-}
-
-function formatFormulaValue(v) {
-  if (!Number.isFinite(v)) return '0';
-  if (Number.isInteger(v)) return v.toString();
-  if (Math.abs(v) >= 1000) return Math.round(v).toString();
-  return v.toFixed(1);
-}
-
-function getFormulaParamValue(paramKey) {
-  if (paramKey === 'a') return paramA;
-  if (paramKey === 'b') return paramB;
-  return paramC;
-}
-
-function setFormulaParamValue(paramKey, nextValue) {
-  if (paramKey === 'a') paramA = nextValue;
-  else if (paramKey === 'b') paramB = nextValue;
-  else paramC = nextValue;
-}
-
-function renderFormulaParam(paramKey, value) {
-  if (editingFormulaParam === paramKey) {
-    const draft = formulaParamDraft === '' ? String(value) : formulaParamDraft;
-    return `<input class="formula-param-input" id="formulaParamInput" type="number" step="0.1" value="${draft}">`;
-  }
-  return `<span class="param-em formula-param" data-param="${paramKey}" title="클릭해 수정">${formatFormulaValue(value)}</span>`;
-}
-
-function getFormulaText(type, a, b, c) {
-  if (type === 'linear') return `y = ${formatFormulaValue(a)} × x + ${formatFormulaValue(b)}`;
-  if (type === 'quadratic') return `y = ${formatFormulaValue(a)} × x × x + ${formatFormulaValue(b)} × x + ${formatFormulaValue(c)}`;
-  return `y = ${formatFormulaValue(a)} × √x + ${formatFormulaValue(b)}`;
-}
-
-function getFormulaHTML(type, a, b, c) {
-  if (type === 'linear') {
-    return `y = ${renderFormulaParam('a', a)} × x + ${renderFormulaParam('b', b)}`;
-  }
-  if (type === 'quadratic') {
-    return `y = ${renderFormulaParam('a', a)} × x × x + ${renderFormulaParam('b', b)} × x + ${renderFormulaParam('c', c)}`;
-  }
-  return `y = ${renderFormulaParam('a', a)} × √x + ${renderFormulaParam('b', b)}`;
-}
-
-function updateFormulaOverlay() {
-  const overlay = document.getElementById('formulaOverlay');
-  if (!overlay) return;
-  overlay.innerHTML = getFormulaHTML(funcType, paramA, paramB, paramC);
-  if (!editingFormulaParam) return;
-  const input = document.getElementById('formulaParamInput');
-  if (!input) return;
-  input.addEventListener('input', e => {
-    formulaParamDraft = e.target.value;
-  });
-  input.addEventListener('keydown', handleFormulaParamInputKeydown);
-  input.addEventListener('blur', () => commitFormulaParamEdit(formulaParamDraft));
-  requestAnimationFrame(() => {
-    input.focus({ preventScroll: true });
-    input.select();
-  });
-}
-
-function handleFormulaOverlayClick(event) {
-  const paramEl = event.target.closest('.formula-param');
-  if (!paramEl || !formulaOverlay || !formulaOverlay.contains(paramEl)) return;
-  if (animating || autoRunning || isCharging) return;
-  const paramKey = paramEl.dataset.param;
-  if (!paramKey) return;
-  editingFormulaParam = paramKey;
-  formulaParamDraft = String(getFormulaParamValue(paramKey));
-  updateFormulaOverlay();
-}
-
-function handleFormulaParamInputKeydown(event) {
-  if (event.key === 'Enter') {
-    event.preventDefault();
-    commitFormulaParamEdit(event.target.value);
-  } else if (event.key === 'Escape') {
-    event.preventDefault();
-    cancelFormulaParamEdit();
-  }
-}
-
-function cancelFormulaParamEdit() {
-  editingFormulaParam = null;
-  formulaParamDraft = '';
-  updateFormulaOverlay();
-}
-
-function syncSettingsInputs() {
-  document.getElementById('setType').value = funcType;
-  document.getElementById('setA').value = paramA;
-  document.getElementById('setB').value = paramB;
-  document.getElementById('setC').value = paramC;
-  document.getElementById('setNoise').value = noiseLevel;
-  document.getElementById('setMax').value = maxTime;
-}
-
-function applyFormulaParamChange(paramKey, rawValue) {
-  const normalized = Math.round(rawValue * 10) / 10;
-  const currentValue = getFormulaParamValue(paramKey);
-  if (normalized === currentValue) {
-    updateFormulaOverlay();
+function handleGraphClick(event) {
+  const clicked = findGraphPointAt(event.clientX, event.clientY);
+  if (!clicked) {
+    const hadSelection = selectedPointId !== null || hoveredGraphPointId !== null;
+    selectedPointId = null;
+    clearGraphHover();
+    if (hadSelection && dataPoints.length > 0) drawGraph();
     return;
   }
-  setFormulaParamValue(paramKey, normalized);
-  syncSettingsInputs();
-  updatePreview();
-  cancelAutoFire();
-  dataPoints = [];
-  nextId = 1;
-  hoveredGraphPointId = null;
-  selectedTablePointId = null;
-  hideGraphTooltip();
-  renderDataTable();
-  updateFormulaOverlay();
-  drawCannon();
-  drawGraph();
-  document.getElementById('instruction').style.display = '';
+  hoveredGraphPointId = clicked.id;
+  showGraphTooltip(clicked);
+  selectDataPoint(clicked.id);
 }
 
-function commitFormulaParamEdit(rawValue) {
-  if (!editingFormulaParam) return;
-  const paramKey = editingFormulaParam;
-  editingFormulaParam = null;
-  formulaParamDraft = '';
-  const parsed = parseFloat(rawValue);
-  if (!Number.isFinite(parsed)) {
-    updateFormulaOverlay();
-    return;
-  }
-  applyFormulaParamChange(paramKey, parsed);
+function openSettings() {
+  document.getElementById('settingsModal').classList.add('show');
 }
 
-// ══════════════ SETTINGS ══════════════
-function openSettings() { document.getElementById('settingsModal').classList.add('show'); }
-function closeSettings() { document.getElementById('settingsModal').classList.remove('show'); }
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('show');
+}
 
 function updatePreview() {
   const type = document.getElementById('setType').value;
@@ -1306,24 +1657,63 @@ function saveSettings() {
   paramA = parseFloat(document.getElementById('setA').value) || 0;
   paramB = parseFloat(document.getElementById('setB').value) || 0;
   paramC = parseFloat(document.getElementById('setC').value) || 0;
-  noiseLevel = parseInt(document.getElementById('setNoise').value) || 0;
-  maxTime = Math.min(parseFloat(document.getElementById('setMax').value) || 5, 5);
-  renderPowerBarScale();
-  cancelAutoFire();
-  dataPoints = [];
-  nextId = 1;
-  hoveredGraphPointId = null;
-  selectedTablePointId = null;
-  hideGraphTooltip();
-  updateFormulaOverlay();
-  renderDataTable();
-  drawCannon();
-  drawGraph();
+  noiseLevel = parseInt(document.getElementById('setNoise').value, 10) || 0;
+  maxInput = Math.min(parseFloat(document.getElementById('setMax').value) || 5, 5);
+  forceInput.max = String(maxInput);
+  renderQuickValues();
   closeSettings();
-  document.getElementById('instruction').style.display = '';
+  resetExperiment(false);
 }
 
-// ══════════════ START ══════════════
+function init() {
+  parseURL();
+  renderQuickValues();
+  resizeAll();
+  renderDataTable();
+  updateResultNote();
+  drawCannon();
+  drawGraph();
+
+  window.addEventListener('resize', () => {
+    resizeAll();
+    hideGraphTooltip();
+    drawCannon();
+    drawGraph();
+  });
+
+  Object.entries(stageButtons).forEach(([stage, button]) => {
+    button.addEventListener('click', () => setStage(stage));
+  });
+
+  fireBtn.addEventListener('click', handleFireAction);
+  nextStageBtn.addEventListener('click', handleNextStageAction);
+  resetBtn.addEventListener('click', () => resetExperiment(true));
+
+  [forceInput, predictionInput].forEach(input => {
+    input.addEventListener('keydown', event => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        handleFireAction();
+      }
+    });
+  });
+
+  if (dataBody) {
+    dataBody.addEventListener('click', handleDataTableClick);
+    dataBody.addEventListener('keydown', handleDataTableKeydown);
+  }
+
+  graphCanvas.addEventListener('mousemove', handleGraphHover);
+  graphCanvas.addEventListener('click', handleGraphClick);
+  graphCanvas.addEventListener('mouseleave', () => clearGraphHover());
+
+  document.getElementById('settingsModal').addEventListener('click', event => {
+    if (event.target.id === 'settingsModal') closeSettings();
+  });
+
+  resetExperiment(false);
+}
+
 init();
 </script>
 </body>
