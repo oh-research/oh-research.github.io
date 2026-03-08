@@ -12,10 +12,34 @@
   --bg:#0f172a;--panel:#1e293b;--accent:#f59e0b;--accent2:#3b82f6;
   --accent3:#10b981;--danger:#ef4444;--text:#f1f5f9;--muted:#94a3b8;--border:#334155;
 }
-body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;height:100vh;overflow:hidden;}
-.home-link{position:fixed;top:14px;left:14px;z-index:200;padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:rgba(15,23,42,.82);backdrop-filter:blur(8px);color:var(--text);text-decoration:none;font-size:12px;font-weight:700;}
+body{
+  background:
+    radial-gradient(circle at top left, rgba(245,158,11,.16), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(59,130,246,.18), transparent 34%),
+    var(--bg);
+  color:var(--text);
+  font-family:'Noto Sans KR',sans-serif;
+  height:100vh;
+  overflow:hidden;
+}
+.page{
+  display:flex;
+  flex-direction:column;
+  width:min(1600px, calc(100vw - 36px));
+  height:calc(100vh - 36px);
+  margin:18px auto;
+  background:rgba(30,41,59,.94);
+  border:1px solid rgba(148,163,184,.16);
+  border-radius:28px;
+  box-shadow:0 28px 72px rgba(2,6,23,.42);
+  overflow:hidden;
+}
+.title-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 16px;background:rgba(0,0,0,.28);border-bottom:1px solid var(--border);flex-shrink:0;}
+.title-text{font-family:'Jua',sans-serif;font-size:22px;letter-spacing:.01em;}
+.header-actions{display:flex;align-items:center;gap:8px;}
+.home-link{padding:7px 12px;border:1px solid var(--border);border-radius:999px;background:rgba(15,23,42,.92);backdrop-filter:blur(8px);color:#fff;text-decoration:none;font-size:15px;font-weight:800;line-height:1;letter-spacing:.01em;}
 .home-link:hover{color:var(--accent);border-color:var(--accent);}
-.app{display:grid;grid-template-columns:250px 1fr 280px;height:100vh;gap:0;}
+.app{display:grid;grid-template-columns:250px 1fr 300px;flex:1;min-height:0;gap:0;}
 .panel{background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
 .panel:last-child{border-right:none;}
 .panel-header{padding:10px 14px;background:rgba(0,0,0,.2);font-family:'Jua',sans-serif;font-size:15px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;}
@@ -42,12 +66,17 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .data-item .del-btn:hover{color:var(--danger);}
 @keyframes flashIn{0%{background:var(--accent);}100%{background:var(--bg);}}
 .clear-row{margin-top:8px;text-align:center;}
+.load-row{margin-top:8px;display:flex;gap:6px;align-items:center;}
+.preset-select{flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:12px;}
+.preset-select:focus{outline:none;border-color:var(--accent2);}
 .lock-msg{color:var(--muted);font-size:11px;text-align:center;margin-top:8px;}
 
 /* Center panel */
-.canvas-wrap{width:100%;height:100%;position:relative;}
+.graph-panel-body{padding:14px !important;background:var(--panel);}
+.canvas-wrap{width:100%;height:100%;position:relative;border-radius:18px;overflow:hidden;background:#1e293b;box-shadow:inset 0 0 0 1px rgba(148,163,184,.12);}
 #graphCanvas{width:100%;height:100%;display:block;}
 .formula-overlay{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);padding:5px 14px;border-radius:8px;font-family:'Jua',sans-serif;font-size:14px;color:var(--accent2);pointer-events:none;white-space:nowrap;}
+.formula-overlay .param-em{color:var(--accent);}
 .celebration{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Jua',sans-serif;font-size:42px;color:var(--accent3);text-shadow:0 0 20px rgba(16,185,129,.6);pointer-events:none;animation:celebPop .6s ease-out;display:none;}
 @keyframes celebPop{0%{transform:translate(-50%,-50%) scale(0);opacity:0;}50%{transform:translate(-50%,-50%) scale(1.2);opacity:1;}100%{transform:translate(-50%,-50%) scale(1);opacity:1;}}
 
@@ -60,11 +89,14 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .param-inputs{margin-bottom:12px;}
 .param-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
 .param-row label{font-size:14px;font-weight:700;min-width:22px;font-family:'Jua',sans-serif;color:var(--accent);}
+.param-label{cursor:pointer;user-select:none;}
 .param-row input{flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:14px;font-variant-numeric:tabular-nums;text-align:right;}
 .param-row input:focus{outline:none;border-color:var(--accent);}
-.apply-row{margin-bottom:14px;}
-.btn-apply{width:100%;padding:10px;font-size:15px;font-family:'Jua',sans-serif;background:var(--accent2);color:#fff;border:none;border-radius:8px;cursor:pointer;transition:background .15s;}
-.btn-apply:hover{background:#2563eb;}
+.param-slider{padding:0;border:none;background:transparent;accent-color:var(--accent2);cursor:pointer;}
+.param-slider:focus-visible{outline:2px solid rgba(59,130,246,.55);outline-offset:4px;border-radius:999px;}
+.param-slider-value{min-width:52px;text-align:right;font-family:'Jua',sans-serif;font-size:15px;color:var(--text);font-variant-numeric:tabular-nums;}
+.param-guide{display:flex;justify-content:space-between;padding-left:30px;padding-right:60px;margin:-2px 0 8px;color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums;letter-spacing:.01em;}
+.param-help{margin-top:2px;font-size:11px;line-height:1.5;color:var(--muted);}
 
 .score-box{background:var(--bg);border-radius:10px;padding:12px;margin-bottom:12px;text-align:center;}
 .score-value{font-family:'Jua',sans-serif;font-size:32px;transition:color .3s;}
@@ -82,8 +114,6 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 
 .bottom-btns{display:flex;gap:6px;margin-top:auto;padding-top:8px;}
 
-.hint-popup{background:var(--bg);border:1px solid var(--accent);border-radius:8px;padding:10px;margin-top:8px;font-size:12px;color:var(--accent);display:none;}
-
 /* Settings modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none;align-items:center;justify-content:center;}
 .modal-overlay.show{display:flex;}
@@ -93,6 +123,9 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 
 /* Responsive */
 @media(max-width:900px){
+  .page{width:calc(100vw - 20px);height:auto;min-height:calc(100vh - 20px);margin:10px auto;border-radius:22px;}
+  .title-bar{padding:10px 12px;align-items:flex-start;}
+  .title-text{font-size:19px;}
   .app{grid-template-columns:1fr;height:auto;}
   .panel{border-right:none;border-bottom:1px solid var(--border);}
   .canvas-wrap{height:50vh;}
@@ -101,14 +134,17 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 </style>
 </head>
 <body>
-<a class="home-link" href="./index.html">← 홈</a>
-<div class="app">
+<div class="page">
+  <header class="title-bar">
+    <div class="title-text">규칙 맞추기 실험실</div>
+    <div class="header-actions">
+      <a class="home-link" href="./index.html">← 홈</a>
+    </div>
+  </header>
+  <div class="app">
   <!-- Left Panel: Data Input -->
   <div class="panel">
-    <div class="panel-header">
-      <span>📊 데이터 입력</span>
-      <button class="btn btn-sm btn-secondary" id="settingsBtn" onclick="openSettings()">⚙️</button>
-    </div>
+    <div class="panel-header"><span>📊 데이터 입력</span></div>
     <div class="panel-body" id="leftBody">
       <div class="input-row" id="inputArea">
         <label>x =</label>
@@ -121,6 +157,12 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
       <div class="clear-row" id="clearRow">
         <button class="btn btn-danger" onclick="clearAllPoints()">전체 삭제</button>
       </div>
+      <div class="load-row" id="loadRow">
+        <select class="preset-select" id="presetSelect">
+          <option value="three_points">점 3개 데이터</option>
+        </select>
+        <button class="btn btn-secondary" onclick="loadPresetData()">데이터 불러오기</button>
+      </div>
       <div class="lock-msg" id="lockMsg" style="display:none;">🔒 데이터가 잠겨 있습니다</div>
     </div>
   </div>
@@ -128,7 +170,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
   <!-- Center Panel: Visualization -->
   <div class="panel" style="border-right:1px solid var(--border);">
     <div class="panel-header"><span>📈 시각화</span></div>
-    <div class="panel-body" style="padding:0;">
+    <div class="panel-body graph-panel-body">
       <div class="canvas-wrap">
         <canvas id="graphCanvas"></canvas>
         <div class="formula-overlay" id="formulaOverlay" style="display:none;"></div>
@@ -153,13 +195,25 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
       </div>
 
       <div class="param-inputs">
-        <div class="param-row"><label>a</label><input type="number" id="paramA" value="0" step="0.1"></div>
-        <div class="param-row"><label>b</label><input type="number" id="paramB" value="0" step="0.1"></div>
-        <div class="param-row" id="paramCRow" style="display:none;"><label>c</label><input type="number" id="paramC" value="0" step="0.1"></div>
-      </div>
-
-      <div class="apply-row">
-        <button class="btn-apply" onclick="applyRule()">적용</button>
+        <div class="param-row">
+          <label class="param-label" for="paramA" tabindex="0" onclick="focusParamSlider('paramA')" onkeydown="focusParamSliderFromKey(event, 'paramA')">a</label>
+          <input class="param-slider" type="range" id="paramA" min="-20" max="20" value="0" step="0.1">
+          <span class="param-slider-value" id="paramAValue">0.0</span>
+        </div>
+        <div class="param-guide"><span>-20.0</span><span>0.0</span><span>20.0</span></div>
+        <div class="param-row">
+          <label class="param-label" for="paramB" tabindex="0" onclick="focusParamSlider('paramB')" onkeydown="focusParamSliderFromKey(event, 'paramB')">b</label>
+          <input class="param-slider" type="range" id="paramB" min="-20" max="20" value="0" step="0.1">
+          <span class="param-slider-value" id="paramBValue">0.0</span>
+        </div>
+        <div class="param-guide"><span>-20.0</span><span>0.0</span><span>20.0</span></div>
+        <div class="param-row" id="paramCRow" style="display:none;">
+          <label class="param-label" for="paramC" tabindex="0" onclick="focusParamSlider('paramC')" onkeydown="focusParamSliderFromKey(event, 'paramC')">c</label>
+          <input class="param-slider" type="range" id="paramC" min="-20" max="20" value="0" step="0.1">
+          <span class="param-slider-value" id="paramCValue">0.0</span>
+        </div>
+        <div class="param-guide" id="paramCGuide" style="display:none;"><span>-20.0</span><span>0.0</span><span>20.0</span></div>
+        <div class="param-help">범위 -20.0 ~ 20.0, 단위 0.1.<br>파라미터 이름을 누른 뒤 화살표 키로도 조절할 수 있습니다.</div>
       </div>
 
       <div class="score-box" id="scoreBox" style="display:none;">
@@ -182,10 +236,9 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 
       <div class="bottom-btns">
         <button class="btn btn-secondary" style="flex:1;" onclick="resetRule()">초기화</button>
-        <button class="btn btn-secondary" style="flex:1;" id="hintBtn" onclick="showHint()">힌트 (3)</button>
       </div>
-      <div class="hint-popup" id="hintPopup"></div>
     </div>
+  </div>
   </div>
 </div>
 
@@ -211,12 +264,19 @@ let hasApplied = false;
 let currentA = 0, currentB = 0, currentC = 0;
 let bestError = Infinity;
 let trials = [];
-let hintCount = 0;
-const MAX_HINTS = 3;
+const PRESET_DATASETS = {
+  three_points: [[0, 1], [1, 5], [2, 9]],
+};
 
 // ══════════════ INIT ══════════════
 const canvas = document.getElementById('graphCanvas');
 const ctx = canvas.getContext('2d');
+const paramAEl = document.getElementById('paramA');
+const paramBEl = document.getElementById('paramB');
+const paramCEl = document.getElementById('paramC');
+const paramAValueEl = document.getElementById('paramAValue');
+const paramBValueEl = document.getElementById('paramBValue');
+const paramCValueEl = document.getElementById('paramCValue');
 
 function init() {
   parseURL();
@@ -229,9 +289,13 @@ function init() {
   // Enter key support
   document.getElementById('inputX').addEventListener('keydown', e => { if(e.key==='Enter') addPoint(); });
   document.getElementById('inputY').addEventListener('keydown', e => { if(e.key==='Enter') addPoint(); });
-  document.getElementById('paramA').addEventListener('keydown', e => { if(e.key==='Enter') applyRule(); });
-  document.getElementById('paramB').addEventListener('keydown', e => { if(e.key==='Enter') applyRule(); });
-  document.getElementById('paramC').addEventListener('keydown', e => { if(e.key==='Enter') applyRule(); });
+  paramAEl.addEventListener('input', () => updateRulePreview(false));
+  paramBEl.addEventListener('input', () => updateRulePreview(false));
+  paramCEl.addEventListener('input', () => updateRulePreview(false));
+  paramAEl.addEventListener('change', applyRule);
+  paramBEl.addEventListener('change', applyRule);
+  paramCEl.addEventListener('change', applyRule);
+  syncParamValueLabels();
 }
 
 function parseURL() {
@@ -262,13 +326,22 @@ function parseURL() {
     isLocked = true;
     document.getElementById('inputArea').style.display = 'none';
     document.getElementById('clearRow').style.display = 'none';
+    document.getElementById('loadRow').style.display = 'none';
     document.getElementById('lockMsg').style.display = 'block';
   }
 
-  // Hide settings
-  if (params.get('hide_settings') === 'true') {
-    document.getElementById('settingsBtn').style.display = 'none';
-  }
+}
+
+function focusParamSlider(id) {
+  const slider = document.getElementById(id);
+  if (!slider) return;
+  slider.focus({ preventScroll: true });
+}
+
+function focusParamSliderFromKey(event, id) {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  focusParamSlider(id);
 }
 
 function resizeCanvas() {
@@ -284,6 +357,7 @@ function setMode(mode) {
   if (allowedModes !== 'both' && mode !== allowedModes) return;
   currentMode = mode;
   updateModeUI();
+  updateRulePreview(false);
 }
 
 function updateModeUI() {
@@ -293,6 +367,7 @@ function updateModeUI() {
   document.getElementById('optLinear').querySelector('input').checked = !isQ;
   document.getElementById('optQuad').querySelector('input').checked = isQ;
   document.getElementById('paramCRow').style.display = isQ ? 'flex' : 'none';
+  document.getElementById('paramCGuide').style.display = isQ ? 'flex' : 'none';
   document.getElementById('thC').style.display = isQ ? '' : 'none';
   document.querySelectorAll('.history-table .c-cell').forEach(el => el.style.display = isQ ? '' : 'none');
 
@@ -312,14 +387,14 @@ function addPoint() {
   document.getElementById('inputY').value = '';
   document.getElementById('inputX').focus();
   renderDataList();
-  renderCanvas();
+  updateRulePreview(false);
 }
 
 function removePoint(idx) {
   if (isLocked) return;
   points.splice(idx, 1);
   renderDataList();
-  renderCanvas();
+  updateRulePreview(false);
 }
 
 function clearAllPoints() {
@@ -327,8 +402,19 @@ function clearAllPoints() {
   points = [];
   hasApplied = false;
   renderDataList();
-  renderCanvas();
-  document.getElementById('formulaOverlay').style.display = 'none';
+  updateRulePreview(false);
+}
+
+function loadPresetData() {
+  if (isLocked) return;
+  const key = document.getElementById('presetSelect').value;
+  const preset = PRESET_DATASETS[key];
+  if (!preset) return;
+  points = preset.map(([x, y]) => [x, y]);
+  document.getElementById('inputX').value = '';
+  document.getElementById('inputY').value = '';
+  renderDataList();
+  resetRule();
 }
 
 function renderDataList() {
@@ -356,15 +442,6 @@ function calcAxisRange() {
   const ys = points.map(p => p[1]);
   let xMin = Math.min(...xs), xMax = Math.max(...xs);
   let yMin = Math.min(...ys), yMax = Math.max(...ys);
-
-  // Include curve range if applied
-  if (hasApplied) {
-    for (let t = xMin; t <= xMax; t += (xMax - xMin) / 50 || 0.1) {
-      const v = predict(t);
-      if (v < yMin) yMin = v;
-      if (v > yMax) yMax = v;
-    }
-  }
 
   const xMargin = (xMax - xMin) * 0.12 || 1;
   const yMargin = (yMax - yMin) * 0.12 || 10;
@@ -417,8 +494,8 @@ function renderCanvas() {
   function toY(v) { return pad.top + plotH - (v - yMin) / (yMax - yMin) * plotH; }
 
   // Grid
-  ctx.strokeStyle = '#1e293b';
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(51,65,85,.5)';
+  ctx.lineWidth = 0.5;
   const xStep = niceStep(xMax - xMin);
   const yStep = niceStep(yMax - yMin);
   ctx.font = '10px "Noto Sans KR"';
@@ -438,7 +515,7 @@ function renderCanvas() {
   }
 
   // Axes
-  ctx.strokeStyle = '#475569';
+  ctx.strokeStyle = '#64748b';
   ctx.lineWidth = 1.5;
   // X axis at y=0
   if (yMin <= 0 && yMax >= 0) {
@@ -516,8 +593,8 @@ function renderCanvas() {
     }
     // Circle
     ctx.beginPath();
-    ctx.arc(cx, cy, 6, 0, Math.PI * 2);
-    ctx.fillStyle = isMatch ? '#10b981' : '#ef4444';
+    ctx.arc(cx, cy, isMatch ? 8 : 6, 0, Math.PI * 2);
+    ctx.fillStyle = isMatch ? '#10b981' : '#3b82f6';
     ctx.fill();
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 2;
@@ -528,9 +605,9 @@ function renderCanvas() {
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(cx - 3, cy);
-      ctx.lineTo(cx - 1, cy + 3);
-      ctx.lineTo(cx + 4, cy - 3);
+      ctx.moveTo(cx - 4, cy);
+      ctx.lineTo(cx - 1.5, cy + 4);
+      ctx.lineTo(cx + 5, cy - 4);
       ctx.stroke();
     }
 
@@ -557,44 +634,26 @@ function formatNum(v) {
   return s;
 }
 
-// ══════════════ APPLY RULE ══════════════
-function applyRule() {
-  if (points.length === 0) return;
+function syncParamValueLabels() {
+  paramAValueEl.textContent = formatNum(parseFloat(paramAEl.value) || 0);
+  paramBValueEl.textContent = formatNum(parseFloat(paramBEl.value) || 0);
+  paramCValueEl.textContent = formatNum(parseFloat(paramCEl.value) || 0);
+}
 
-  currentA = parseFloat(document.getElementById('paramA').value) || 0;
-  currentB = parseFloat(document.getElementById('paramB').value) || 0;
-  currentC = currentMode === 'quadratic' ? (parseFloat(document.getElementById('paramC').value) || 0) : 0;
-  hasApplied = true;
-
-  // Calculate error
+function calculateTotalError() {
   let totalError = 0;
   points.forEach(([px, py]) => {
     totalError += Math.abs(predict(px) - py);
   });
-  totalError = Math.round(totalError * 100) / 100;
+  return Math.round(totalError * 100) / 100;
+}
 
-  // Update best
-  if (totalError < bestError) bestError = totalError;
-
-  // Trial record
-  const trial = { a: currentA, b: currentB, c: currentC, error: totalError };
-  trials.push(trial);
-
-  // Update UI
-  document.getElementById('scoreBox').style.display = 'block';
-  const scoreEl = document.getElementById('scoreValue');
-  scoreEl.textContent = totalError;
-  scoreEl.style.color = totalError === 0 ? '#10b981' : totalError < (getYRange() * 0.05) ? '#f59e0b' : '#ef4444';
-
-  document.getElementById('bestScore').textContent = bestError;
-  document.getElementById('trialCount').textContent = trials.length;
-
-  // Feedback
+function updateFeedback(totalError, committed) {
   const fb = document.getElementById('feedback');
   if (totalError === 0) {
     fb.textContent = '🎉 완벽! 모든 점을 정확히 지나갑니다!';
     fb.style.color = '#10b981';
-    showCelebration();
+    if (committed) showCelebration();
   } else if (totalError < getYRange() * 0.02) {
     fb.textContent = '거의 다 맞았어요! 조금만 더!';
     fb.style.color = '#f59e0b';
@@ -608,18 +667,63 @@ function applyRule() {
     fb.textContent = '아직 멀었어요. a부터 조절해보세요!';
     fb.style.color = '#ef4444';
   }
+}
 
-  // Formula overlay
+function updateFormulaOverlay() {
   const overlay = document.getElementById('formulaOverlay');
   overlay.style.display = 'block';
   if (currentMode === 'linear') {
-    overlay.textContent = `y = ${currentA} × x + ${currentB}`;
+    overlay.innerHTML = `y = <span class="param-em">${formatNum(currentA)}</span> × x + <span class="param-em">${formatNum(currentB)}</span>`;
   } else {
-    overlay.textContent = `y = ${currentA} × x × x + ${currentB} × x + ${currentC}`;
+    overlay.innerHTML = `y = <span class="param-em">${formatNum(currentA)}</span> × x × x + <span class="param-em">${formatNum(currentB)}</span> × x + <span class="param-em">${formatNum(currentC)}</span>`;
+  }
+}
+
+function updateRulePreview(committed) {
+  syncParamValueLabels();
+  currentA = parseFloat(paramAEl.value) || 0;
+  currentB = parseFloat(paramBEl.value) || 0;
+  currentC = currentMode === 'quadratic' ? (parseFloat(paramCEl.value) || 0) : 0;
+  hasApplied = points.length > 0 || currentA !== 0 || currentB !== 0 || (currentMode === 'quadratic' && currentC !== 0);
+  if (hasApplied) updateFormulaOverlay();
+  else document.getElementById('formulaOverlay').style.display = 'none';
+
+  if (points.length === 0) {
+    document.getElementById('scoreBox').style.display = 'none';
+    document.getElementById('bestScore').textContent = bestError === Infinity ? '-' : bestError;
+    document.getElementById('trialCount').textContent = trials.length;
+    renderCanvas();
+    return;
   }
 
-  renderHistory();
+  const totalError = calculateTotalError();
+  if (committed) {
+    if (totalError < bestError) bestError = totalError;
+    const last = trials[trials.length - 1];
+    const sameAsLast = last &&
+      last.a === currentA &&
+      last.b === currentB &&
+      last.c === currentC &&
+      last.error === totalError;
+    if (!sameAsLast) {
+      trials.push({ a: currentA, b: currentB, c: currentC, error: totalError });
+    }
+  }
+
+  document.getElementById('scoreBox').style.display = 'block';
+  const scoreEl = document.getElementById('scoreValue');
+  scoreEl.textContent = totalError;
+  scoreEl.style.color = totalError === 0 ? '#10b981' : totalError < (getYRange() * 0.05) ? '#f59e0b' : '#ef4444';
+  document.getElementById('bestScore').textContent = bestError === Infinity ? '-' : bestError;
+  document.getElementById('trialCount').textContent = trials.length;
+  updateFeedback(totalError, committed);
+  if (committed) renderHistory();
   renderCanvas();
+}
+
+// ══════════════ APPLY RULE ══════════════
+function applyRule() {
+  updateRulePreview(true);
 }
 
 function getYRange() {
@@ -658,61 +762,19 @@ function renderHistory() {
 
 // ══════════════ RESET ══════════════
 function resetRule() {
-  document.getElementById('paramA').value = 0;
-  document.getElementById('paramB').value = 0;
-  document.getElementById('paramC').value = 0;
+  paramAEl.value = 0;
+  paramBEl.value = 0;
+  paramCEl.value = 0;
   currentA = 0; currentB = 0; currentC = 0;
   hasApplied = false;
   bestError = Infinity;
   trials = [];
-  hintCount = 0;
-  document.getElementById('hintBtn').textContent = `힌트 (${MAX_HINTS})`;
-  document.getElementById('hintBtn').disabled = false;
-  document.getElementById('hintPopup').style.display = 'none';
   document.getElementById('scoreBox').style.display = 'none';
   document.getElementById('formulaOverlay').style.display = 'none';
   document.getElementById('historyBody').innerHTML = '';
   document.getElementById('celebration').style.display = 'none';
+  syncParamValueLabels();
   renderCanvas();
-}
-
-// ══════════════ HINT ══════════════
-function showHint() {
-  if (hintCount >= MAX_HINTS || points.length === 0) return;
-  hintCount++;
-  document.getElementById('hintBtn').textContent = `힌트 (${MAX_HINTS - hintCount})`;
-  if (hintCount >= MAX_HINTS) document.getElementById('hintBtn').disabled = true;
-
-  const popup = document.getElementById('hintPopup');
-  popup.style.display = 'block';
-
-  // Find ideal values for hint direction
-  let idealA = 0;
-  if (points.length >= 2) {
-    const [x1, y1] = points[0];
-    const [x2, y2] = points[points.length - 1];
-    if (x2 !== x1) idealA = (y2 - y1) / (x2 - x1);
-  }
-
-  if (currentMode === 'linear') {
-    if (hintCount === 1) {
-      popup.textContent = '💡 a는 선의 기울기예요. x가 1 늘 때 y가 얼마 느는지 생각해보세요.';
-    } else if (hintCount === 2) {
-      popup.textContent = '💡 b는 x = 0일 때의 y값이에요. 데이터에서 x = 0인 점을 보세요.';
-    } else {
-      const dir = idealA > currentA ? '크게' : '작게';
-      popup.textContent = `💡 a를 지금보다 ${dir} 해보세요.`;
-    }
-  } else {
-    if (hintCount === 1) {
-      popup.textContent = '💡 a는 곡선이 얼마나 휘어지는지를 결정해요.';
-    } else if (hintCount === 2) {
-      popup.textContent = '💡 c는 x = 0일 때의 y값이에요.';
-    } else {
-      const dir = idealA > currentA ? '크게' : '작게';
-      popup.textContent = `💡 a를 지금보다 ${dir} 해보세요.`;
-    }
-  }
 }
 
 // ══════════════ SETTINGS ══════════════

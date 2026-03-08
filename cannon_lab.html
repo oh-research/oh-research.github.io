@@ -12,17 +12,50 @@
   --bg:#0f172a;--panel:#1e293b;--accent:#f59e0b;--accent2:#3b82f6;
   --accent3:#10b981;--danger:#ef4444;--text:#f1f5f9;--muted:#94a3b8;--border:#334155;
 }
-body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;height:100vh;overflow:hidden;}
-.home-link{position:fixed;top:14px;left:14px;z-index:200;padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:rgba(15,23,42,.82);backdrop-filter:blur(8px);color:var(--text);text-decoration:none;font-size:12px;font-weight:700;}
+body{
+  background:
+    radial-gradient(circle at top left, rgba(245,158,11,.16), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(59,130,246,.18), transparent 34%),
+    var(--bg);
+  color:var(--text);
+  font-family:'Noto Sans KR',sans-serif;
+  height:100vh;
+  overflow:hidden;
+}
+.page{
+  display:flex;
+  flex-direction:column;
+  width:min(1600px, calc(100vw - 36px));
+  height:calc(100vh - 36px);
+  margin:18px auto;
+  background:rgba(30,41,59,.94);
+  border:1px solid rgba(148,163,184,.16);
+  border-radius:28px;
+  box-shadow:0 28px 72px rgba(2,6,23,.42);
+  overflow:hidden;
+}
+.title-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 16px;background:rgba(0,0,0,.28);border-bottom:1px solid var(--border);flex-shrink:0;}
+.title-text{font-family:'Jua',sans-serif;font-size:22px;letter-spacing:.01em;}
+.header-actions{display:flex;align-items:center;gap:8px;}
+.home-link{padding:7px 12px;border:1px solid var(--border);border-radius:999px;background:rgba(15,23,42,.92);backdrop-filter:blur(8px);color:#fff;text-decoration:none;font-size:15px;font-weight:800;line-height:1;letter-spacing:.01em;}
 .home-link:hover{color:var(--accent);border-color:var(--accent);}
-.app{display:grid;grid-template-columns:1fr 280px 1fr;height:100vh;gap:0;}
+.app{display:grid;grid-template-columns:1fr 280px 1fr;flex:1;min-height:0;gap:0;}
 .panel{background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
 .panel:last-child{border-right:none;}
 .panel-header{padding:10px 14px;background:rgba(0,0,0,.2);font-family:'Jua',sans-serif;font-size:15px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;}
+.panel-title-with-icon{display:inline-flex;align-items:center;gap:8px;}
+.panel-title-with-icon svg{width:18px;height:18px;display:block;flex:none;}
+.panel-subheader{padding:9px 14px;border-bottom:1px solid var(--border);background:rgba(15,23,42,.5);flex-shrink:0;}
 .panel-body{flex:1;overflow:hidden;position:relative;}
 
 /* Cannon Canvas */
 #cannonCanvas{width:100%;height:100%;display:block;}
+.formula-overlay{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:4;max-width:calc(100% - 24px);padding:5px 14px;border-radius:8px;background:rgba(0,0,0,.6);font-family:'Jua',sans-serif;font-size:14px;color:var(--accent2);pointer-events:none;white-space:nowrap;box-shadow:0 10px 24px rgba(2,6,23,.26);}
+.formula-overlay .param-em{color:var(--accent);}
+.speed-control{display:flex;align-items:center;gap:12px;}
+.speed-control-label{font-size:12px;color:var(--muted);font-weight:700;white-space:nowrap;}
+.speed-slider{flex:1;accent-color:var(--accent2);cursor:pointer;}
+.speed-value{min-width:64px;text-align:right;font-family:'Jua',sans-serif;font-size:14px;color:var(--text);white-space:nowrap;}
 
 /* Data Table */
 .table-wrap{flex:1;overflow-y:auto;padding:8px;}
@@ -30,24 +63,43 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .data-table th{color:var(--muted);font-weight:400;padding:6px 8px;border-bottom:1px solid var(--border);text-align:center;font-size:12px;position:sticky;top:0;background:var(--panel);}
 .data-table td{padding:6px 8px;text-align:center;border-bottom:1px solid rgba(51,65,85,.3);}
 .data-table tr.new-row{animation:flashIn .5s;}
+.data-table tr.hover-row td{background:rgba(59,130,246,.14);}
+.data-table tr.hover-row td:first-child{border-top-left-radius:8px;border-bottom-left-radius:8px;}
+.data-table tr.hover-row td:last-child{border-top-right-radius:8px;border-bottom-right-radius:8px;}
 @keyframes flashIn{0%{background:var(--accent);}100%{background:transparent;}}
 
 /* Graph Canvas */
 #graphCanvas{width:100%;height:100%;display:block;}
+.graph-panel-body{padding:14px;}
+.graph-wrap{position:relative;width:100%;height:100%;border-radius:18px;overflow:hidden;background:#1e293b;box-shadow:inset 0 0 0 1px rgba(148,163,184,.12);}
+.graph-tooltip{position:absolute;display:none;z-index:20;pointer-events:none;padding:10px 12px;border:1px solid rgba(148,163,184,.35);border-radius:12px;background:rgba(15,23,42,.96);box-shadow:0 12px 28px rgba(2,6,23,.45);white-space:nowrap;transform:translate(-50%, calc(-100% - 12px));}
+.graph-tooltip.show{display:block;}
+.graph-tooltip-label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;}
+.graph-tooltip-value{display:block;font-family:'Jua',sans-serif;font-size:20px;color:#fff;letter-spacing:.02em;}
 
 /* Bottom Input Bar */
 .input-bar{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);padding:8px 12px;display:flex;align-items:center;gap:6px;z-index:10;}
-.input-bar .tab{padding:5px 10px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;font-family:'Noto Sans KR',sans-serif;}
-.input-bar .tab.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700;}
-.input-bar input{width:70px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px;text-align:right;}
-.input-bar input:focus{outline:none;border-color:var(--accent);}
-.input-bar .fire-btn{padding:5px 14px;background:var(--danger);color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:'Jua',sans-serif;font-size:13px;}
-.input-bar .fire-btn:hover{background:#dc2626;}
+.space-hint{padding:5px 10px;font-size:11px;border:1px solid var(--accent);border-radius:999px;background:rgba(245,158,11,.14);color:var(--text);font-weight:700;font-family:'Noto Sans KR',sans-serif;}
+.auto-count{display:flex;align-items:center;gap:6px;margin-left:auto;padding:4px 8px;border:1px solid var(--border);border-radius:999px;background:rgba(15,23,42,.72);}
+.auto-count-label{font-size:11px;color:var(--muted);font-weight:700;white-space:nowrap;}
+.auto-count-input{width:52px;padding:4px 6px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:12px;text-align:right;font-variant-numeric:tabular-nums;}
+.auto-count-input:focus{outline:none;border-color:var(--accent2);}
+.auto-btn{padding:7px 12px;background:var(--accent2);color:#fff;border:none;border-radius:999px;cursor:pointer;font-family:'Jua',sans-serif;font-size:13px;box-shadow:0 10px 22px rgba(59,130,246,.28);}
+.auto-btn:hover{background:#2563eb;}
+.auto-btn:disabled{background:#475569;cursor:default;box-shadow:none;}
+.auto-cancel-btn{padding:7px 12px;background:rgba(71,85,105,.92);color:#fff;border:none;border-radius:999px;cursor:pointer;font-family:'Jua',sans-serif;font-size:13px;}
+.auto-cancel-btn:hover{background:#64748b;}
+.auto-cancel-btn:disabled{opacity:.45;cursor:default;}
 
 /* Power Bar */
-.power-bar-wrap{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);width:200px;height:24px;background:var(--bg);border-radius:12px;border:2px solid var(--border);overflow:hidden;display:none;z-index:10;}
-.power-bar-fill{height:100%;width:0%;transition:none;border-radius:10px;}
-.power-bar-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Jua',sans-serif;font-size:13px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5);}
+.power-bar-wrap{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);width:200px;height:24px;background:var(--bg);border-radius:12px;border:2px solid var(--border);overflow:visible;display:none;z-index:10;}
+.power-bar-wrap.pulse{animation:powerPulse .22s ease-out;}
+.power-bar-fill{position:relative;z-index:1;height:100%;width:0%;transition:none;border-radius:10px;}
+.power-bar-scale{position:absolute;left:0;right:0;top:0;bottom:0;z-index:2;pointer-events:none;overflow:visible;}
+.power-bar-tick{position:absolute;top:3px;bottom:3px;width:1px;background:rgba(255,255,255,.45);}
+.power-bar-tick span{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--text);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.power-bar-label{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;font-family:'Jua',sans-serif;font-size:13px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5);font-variant-numeric:tabular-nums;letter-spacing:.02em;}
+@keyframes powerPulse{0%{transform:translateX(-50%) scale(1);}50%{transform:translateX(-50%) scale(1.04);}100%{transform:translateX(-50%) scale(1);}}
 
 /* Settings */
 .settings-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;}
@@ -70,6 +122,9 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(245,158,11,.6);}100%{box-shadow:0 0 0 12px rgba(245,158,11,0);}}
 
 @media(max-width:900px){
+  .page{width:calc(100vw - 20px);height:auto;min-height:calc(100vh - 20px);margin:10px auto;border-radius:22px;}
+  .title-bar{padding:10px 12px;align-items:flex-start;}
+  .title-text{font-size:19px;}
   .app{grid-template-columns:1fr;height:auto;}
   .panel{border-right:none;border-bottom:1px solid var(--border);}
   .panel-body{height:40vh;}
@@ -78,23 +133,53 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 </style>
 </head>
 <body>
-<a class="home-link" href="./index.html">← 홈</a>
-<div class="app">
+<div class="page">
+  <header class="title-bar">
+    <div class="title-text">대포 실험실</div>
+    <div class="header-actions">
+      <a class="home-link" href="./index.html">← 홈</a>
+    </div>
+  </header>
+  <div class="app">
   <!-- Left: Cannon Visualization -->
   <div class="panel">
-    <div class="panel-header"><span>🔫 대포 발사</span></div>
+    <div class="panel-header">
+      <span class="panel-title-with-icon">
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M12 34H24" stroke="#f8fafc" stroke-width="5" stroke-linecap="round" opacity=".9"/>
+          <path d="M8 42H22" stroke="#f8fafc" stroke-width="5" stroke-linecap="round" opacity=".7"/>
+          <path d="M16 26H27" stroke="#f8fafc" stroke-width="5" stroke-linecap="round" opacity=".55"/>
+          <circle cx="40" cy="34" r="13" fill="#0f172a"/>
+          <circle cx="40" cy="34" r="12" stroke="#334155" stroke-width="2"/>
+          <circle cx="35.5" cy="29.5" r="3.5" fill="rgba(255,255,255,.18)"/>
+        </svg>
+        <span>대포 발사</span>
+      </span>
+    </div>
+    <div class="panel-subheader">
+      <div class="speed-control">
+        <span class="speed-control-label">속도 조절</span>
+        <input class="speed-slider" id="speedSlider" type="range" min="0.5" max="3" step="0.1" value="1">
+        <span class="speed-value" id="speedValue">보통 1.0x</span>
+      </div>
+    </div>
     <div class="panel-body">
       <canvas id="cannonCanvas"></canvas>
+      <div class="formula-overlay" id="formulaOverlay"></div>
       <div class="power-bar-wrap" id="powerBarWrap">
+        <div class="power-bar-scale" id="powerBarScale"></div>
         <div class="power-bar-fill" id="powerBarFill"></div>
-        <div class="power-bar-label" id="powerBarLabel">0.0초</div>
+        <div class="power-bar-label" id="powerBarLabel">0.00초</div>
       </div>
-      <div class="instruction" id="instruction">스페이스바를 누르거나<br>아래에서 숫자를 입력하세요</div>
+      <div class="instruction" id="instruction">스페이스바를 길게 누른 뒤<br>놓으면 발사됩니다</div>
       <div class="input-bar">
-        <button class="tab active" id="tabSpace" onclick="setInputMode('space')">🎮 스페이스바</button>
-        <button class="tab" id="tabNum" onclick="setInputMode('number')">🔢 숫자 입력</button>
-        <input type="number" id="numInput" step="0.1" placeholder="시간" style="display:none;">
-        <button class="fire-btn" id="fireBtn" onclick="fireFromInput()" style="display:none;">발사</button>
+        <div class="space-hint">🎮 스페이스바로 발사</div>
+        <div class="auto-count">
+          <span class="auto-count-label">자동발사</span>
+          <input class="auto-count-input" id="autoCountInput" type="number" min="1" max="50" step="1" value="10">
+        </div>
+        <button class="auto-btn" id="autoBtn" onclick="toggleAutoFire()">자동 발사</button>
+        <button class="auto-cancel-btn" id="autoCancelBtn" onclick="cancelAutoFire()" disabled>취소</button>
       </div>
     </div>
   </div>
@@ -114,13 +199,17 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 
   <!-- Right: Graph -->
   <div class="panel">
-    <div class="panel-header">
-      <span>📈 좌표평면</span>
-      <button class="settings-btn" id="settingsBtn" onclick="openSettings()">⚙️</button>
+    <div class="panel-header"><span>📈 좌표평면</span></div>
+    <div class="panel-body graph-panel-body">
+      <div class="graph-wrap">
+        <canvas id="graphCanvas"></canvas>
+        <div class="graph-tooltip" id="graphTooltip">
+          <span class="graph-tooltip-label">좌표</span>
+          <span class="graph-tooltip-value" id="graphTooltipValue"></span>
+        </div>
+      </div>
     </div>
-    <div class="panel-body">
-      <canvas id="graphCanvas"></canvas>
-    </div>
+  </div>
   </div>
 </div>
 
@@ -139,7 +228,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
     <label>b</label><input type="number" id="setB" value="0" step="0.1" onchange="updatePreview()">
     <label>c (2차만)</label><input type="number" id="setC" value="0" step="0.1" onchange="updatePreview()">
     <label>노이즈 레벨 (0 = 정확)</label><input type="number" id="setNoise" value="0" min="0" max="20" step="1">
-    <label>최대 시간 (초)</label><input type="number" id="setMax" value="3" min="1" max="10" step="0.5">
+    <label>최대 시간 (초)</label><input type="number" id="setMax" value="5" min="1" max="5" step="0.5">
     <div class="preview" id="setPreview">y = 25 × x + 0</div>
     <button class="save-btn" onclick="saveSettings()">저장 (데이터 초기화)</button>
   </div>
@@ -150,26 +239,45 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 let funcType = 'linear'; // 'linear' | 'quadratic' | 'sqrt'
 let paramA = 25, paramB = 0, paramC = 0;
 let noiseLevel = 0;
-let maxTime = 3;
+let maxTime = 5;
 let dataPoints = []; // [{x, y, id}]
 let nextId = 1;
-let inputMode = 'space'; // 'space' | 'number'
 
 // Space bar state
 let isCharging = false;
 let chargeStart = 0;
 let chargeTime = 0;
 let chargeRAF = null;
+let lastChargeCueSecond = 0;
+let autoQueue = [];
+let autoRunning = false;
+let autoPaused = false;
+let autoTotalShots = 0;
+let autoNextTimeoutId = null;
+let animationSpeed = 1;
 
 // Animation state
 let animating = false;
 let animData = null;
+const FLIGHT_BASE_MS = 380;
+const FLIGHT_PER_SECOND_MS = 120;
+const LANDING_EFFECT_MS = 280;
+const LANDING_SETTLE_MS = 220;
+const AUTO_GAP_MS = 180;
 
 // Canvases
 const cannonCanvas = document.getElementById('cannonCanvas');
 const cannonCtx = cannonCanvas.getContext('2d');
 const graphCanvas = document.getElementById('graphCanvas');
 const graphCtx = graphCanvas.getContext('2d');
+const graphTooltip = document.getElementById('graphTooltip');
+const graphTooltipValue = document.getElementById('graphTooltipValue');
+const speedSlider = document.getElementById('speedSlider');
+const speedValue = document.getElementById('speedValue');
+const autoCountInput = document.getElementById('autoCountInput');
+const autoCancelBtn = document.getElementById('autoCancelBtn');
+let graphHitPoints = [];
+let hoveredGraphPointId = null;
 
 // ══════════════ SEEDED RANDOM ══════════════
 function seededRandom(seed) {
@@ -196,14 +304,21 @@ function calcDistance(x) {
 // ══════════════ INIT ══════════════
 function init() {
   parseURL();
+  updateSpeedUI();
+  renderPowerBarScale();
   resizeAll();
   drawCannon();
   drawGraph();
-  window.addEventListener('resize', () => { resizeAll(); drawCannon(); drawGraph(); });
+  window.addEventListener('resize', () => {
+    resizeAll();
+    hideGraphTooltip();
+    drawCannon();
+    drawGraph();
+  });
 
   // Keyboard
   document.addEventListener('keydown', e => {
-    if (e.code === 'Space' && inputMode === 'space' && !isCharging && !animating) {
+    if (e.code === 'Space' && !isCharging && !animating && !autoRunning) {
       e.preventDefault();
       startCharge();
     }
@@ -214,9 +329,35 @@ function init() {
       releaseCharge();
     }
   });
-  document.getElementById('numInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') fireFromInput();
+  speedSlider.addEventListener('input', e => {
+    animationSpeed = parseFloat(e.target.value) || 1;
+    updateSpeedUI();
   });
+  graphCanvas.addEventListener('mousemove', handleGraphHover);
+  graphCanvas.addEventListener('mouseleave', clearGraphHover);
+  updateAutoButton();
+}
+
+function updateSpeedUI() {
+  if (speedSlider) speedSlider.value = String(animationSpeed);
+  let label = '보통';
+  if (animationSpeed < 1) label = '느림';
+  else if (animationSpeed > 1) label = '빠름';
+  if (speedValue) speedValue.textContent = `${label} ${animationSpeed.toFixed(1)}x`;
+}
+
+function renderPowerBarScale() {
+  const scale = document.getElementById('powerBarScale');
+  if (!scale) return;
+  scale.innerHTML = '';
+  for (let sec = 1; sec < Math.ceil(maxTime); sec++) {
+    if (sec >= maxTime) break;
+    const tick = document.createElement('div');
+    tick.className = 'power-bar-tick';
+    tick.style.left = `${(sec / maxTime) * 100}%`;
+    tick.innerHTML = `<span>${sec}s</span>`;
+    scale.appendChild(tick);
+  }
 }
 
 function parseURL() {
@@ -226,10 +367,7 @@ function parseURL() {
   if (p.has('b')) paramB = parseFloat(p.get('b'));
   if (p.has('c')) paramC = parseFloat(p.get('c'));
   if (p.has('noise')) noiseLevel = parseInt(p.get('noise'));
-  if (p.has('max')) maxTime = parseFloat(p.get('max'));
-  if (p.get('hide_settings') === 'true') {
-    document.getElementById('settingsBtn').style.display = 'none';
-  }
+  if (p.has('max')) maxTime = Math.min(parseFloat(p.get('max')), 5);
   // Sync settings UI
   document.getElementById('setType').value = funcType;
   document.getElementById('setA').value = paramA;
@@ -238,6 +376,7 @@ function parseURL() {
   document.getElementById('setNoise').value = noiseLevel;
   document.getElementById('setMax').value = maxTime;
   updatePreview();
+  updateFormulaOverlay();
 }
 
 function resizeAll() {
@@ -254,18 +393,12 @@ function resize(cvs, c) {
 }
 
 // ══════════════ INPUT MODE ══════════════
-function setInputMode(mode) {
-  inputMode = mode;
-  document.getElementById('tabSpace').classList.toggle('active', mode === 'space');
-  document.getElementById('tabNum').classList.toggle('active', mode === 'number');
-  document.getElementById('numInput').style.display = mode === 'number' ? '' : 'none';
-  document.getElementById('fireBtn').style.display = mode === 'number' ? '' : 'none';
-}
-
 // ══════════════ CHARGING ══════════════
 function startCharge() {
   isCharging = true;
   chargeStart = performance.now();
+  chargeTime = 0;
+  lastChargeCueSecond = 0;
   document.getElementById('powerBarWrap').style.display = 'block';
   document.getElementById('instruction').style.display = 'none';
   updateCharge();
@@ -283,11 +416,24 @@ function updateCharge() {
   if (pct < 50) fill.style.background = `linear-gradient(90deg, #10b981, #f59e0b)`;
   else fill.style.background = `linear-gradient(90deg, #10b981, #f59e0b, #ef4444)`;
 
-  document.getElementById('powerBarLabel').textContent = chargeTime.toFixed(1) + '초';
+  document.getElementById('powerBarLabel').textContent = chargeTime.toFixed(2) + '초';
+
+  const reachedSecond = Math.floor(chargeTime);
+  if (reachedSecond > lastChargeCueSecond) {
+    pulsePowerBar();
+    lastChargeCueSecond = reachedSecond;
+  }
 
   if (chargeTime < maxTime) {
     chargeRAF = requestAnimationFrame(updateCharge);
   }
+}
+
+function pulsePowerBar() {
+  const wrap = document.getElementById('powerBarWrap');
+  wrap.classList.remove('pulse');
+  void wrap.offsetWidth;
+  wrap.classList.add('pulse');
 }
 
 function releaseCharge() {
@@ -298,12 +444,124 @@ function releaseCharge() {
   if (t > 0) fire(t);
 }
 
-function fireFromInput() {
-  const val = parseFloat(document.getElementById('numInput').value);
-  if (isNaN(val) || val <= 0 || val > maxTime) return;
-  const t = Math.round(val * 10) / 10;
-  document.getElementById('numInput').value = '';
-  fire(t);
+function buildAutoShotQueue(requestedCount) {
+  const maxTenths = Math.max(1, Math.round(maxTime * 10));
+  const usedTimes = new Set(dataPoints.map(point => point.x.toFixed(1)));
+  const values = [];
+  for (let tenth = 1; tenth <= maxTenths; tenth++) {
+    const value = tenth / 10;
+    if (!usedTimes.has(value.toFixed(1))) {
+      values.push(value);
+    }
+  }
+  for (let i = values.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [values[i], values[j]] = [values[j], values[i]];
+  }
+  return values.slice(0, Math.min(requestedCount, values.length));
+}
+
+function clearAutoNextTimeout() {
+  if (autoNextTimeoutId !== null) {
+    clearTimeout(autoNextTimeoutId);
+    autoNextTimeoutId = null;
+  }
+}
+
+function scheduleNextAutoShot(delayMs) {
+  clearAutoNextTimeout();
+  autoNextTimeoutId = setTimeout(() => {
+    autoNextTimeoutId = null;
+    runNextAutoShot();
+  }, delayMs);
+}
+
+function finishAutoFire() {
+  clearAutoNextTimeout();
+  autoQueue = [];
+  autoRunning = false;
+  autoPaused = false;
+  autoTotalShots = 0;
+  updateAutoButton();
+}
+
+function updateAutoButton() {
+  const btn = document.getElementById('autoBtn');
+  if (!btn) return;
+  if (autoRunning) {
+    const fired = autoTotalShots - autoQueue.length;
+    btn.textContent = autoPaused ? `이어하기 ${fired}/${autoTotalShots}` : `일시정지 ${fired}/${autoTotalShots}`;
+    btn.disabled = false;
+    autoCountInput.disabled = true;
+    autoCancelBtn.disabled = false;
+  } else {
+    btn.textContent = '자동 발사';
+    btn.disabled = false;
+    autoCountInput.disabled = false;
+    autoCancelBtn.disabled = true;
+  }
+}
+
+function startAutoFire() {
+  if (animating || isCharging) return;
+  const requestedCount = Math.min(Math.max(parseInt(autoCountInput.value, 10) || 10, 1), 50);
+  autoCountInput.value = String(requestedCount);
+  autoQueue = buildAutoShotQueue(requestedCount);
+  if (autoQueue.length === 0) return;
+  autoTotalShots = autoQueue.length;
+  autoRunning = true;
+  autoPaused = false;
+  document.getElementById('instruction').style.display = 'none';
+  updateAutoButton();
+  runNextAutoShot();
+}
+
+function pauseAutoFire() {
+  if (!autoRunning) return;
+  autoPaused = true;
+  clearAutoNextTimeout();
+  updateAutoButton();
+}
+
+function resumeAutoFire() {
+  if (!autoRunning) return;
+  autoPaused = false;
+  updateAutoButton();
+  if (!animating) {
+    if (autoQueue.length > 0) scheduleNextAutoShot(0);
+    else finishAutoFire();
+  }
+}
+
+function toggleAutoFire() {
+  if (!autoRunning) {
+    startAutoFire();
+  } else if (autoPaused) {
+    resumeAutoFire();
+  } else {
+    pauseAutoFire();
+  }
+}
+
+function cancelAutoFire() {
+  if (!autoRunning && autoQueue.length === 0) return;
+  clearAutoNextTimeout();
+  autoQueue = [];
+  autoRunning = false;
+  autoPaused = false;
+  autoTotalShots = 0;
+  updateAutoButton();
+}
+
+function runNextAutoShot() {
+  if (!autoRunning || autoPaused || animating) return;
+  if (autoQueue.length === 0) {
+    finishAutoFire();
+    return;
+  }
+  const nextShot = autoQueue.shift();
+  updateAutoButton();
+  fire(nextShot);
 }
 
 // ══════════════ FIRE ══════════════
@@ -315,12 +573,14 @@ function fire(x) {
   // Animate
   animating = true;
   const maxDist = calcDistance(maxTime);
-  const duration = 800 + x * 200; // ms
+  const duration = (FLIGHT_BASE_MS + x * FLIGHT_PER_SECOND_MS) / animationSpeed;
 
   animData = {
     x, y,
     startTime: performance.now(),
     duration,
+    landingEffectSec: (LANDING_EFFECT_MS / animationSpeed) / 1000,
+    landingSettleMs: LANDING_SETTLE_MS / animationSpeed,
     maxDist: Math.max(maxDist, y, 100),
     trail: [],
     landed: false,
@@ -361,7 +621,16 @@ function animateFrame(now) {
     renderDataTable();
     drawGraph();
 
-    setTimeout(() => { animating = false; }, 600);
+    setTimeout(() => {
+      animating = false;
+      if (autoRunning) {
+        if (autoQueue.length > 0) {
+          if (!autoPaused) scheduleNextAutoShot(AUTO_GAP_MS / animationSpeed);
+        } else {
+          finishAutoFire();
+        }
+      }
+    }, animData.landingSettleMs);
   }
 }
 
@@ -375,7 +644,7 @@ function animateParticles(now) {
 
   drawCannonFrame(1, animData.x, animData.y, animData.maxDist, elapsed);
 
-  if (elapsed < 0.6) {
+  if (elapsed < animData.landingEffectSec) {
     requestAnimationFrame(animateParticles);
   } else {
     drawCannon(); // Final static frame with flag
@@ -581,13 +850,22 @@ function renderDataTable() {
   body.innerHTML = '';
   dataPoints.forEach((p, i) => {
     const tr = document.createElement('tr');
+    tr.dataset.pointId = String(p.id);
     if (i === dataPoints.length - 1) tr.className = 'new-row';
     tr.innerHTML = `<td>${i + 1}</td><td>${p.x}</td><td>${p.y}</td>`;
     body.appendChild(tr);
   });
+  updateDataTableHighlight();
   // Auto scroll
   const wrap = body.closest('.table-wrap');
   if (wrap) wrap.scrollTop = wrap.scrollHeight;
+}
+
+function updateDataTableHighlight() {
+  const rows = document.querySelectorAll('#dataBody tr');
+  rows.forEach(row => {
+    row.classList.toggle('hover-row', row.dataset.pointId === String(hoveredGraphPointId));
+  });
 }
 
 // ══════════════ GRAPH ══════════════
@@ -595,11 +873,13 @@ function drawGraph() {
   const W = graphCanvas.width / (window.devicePixelRatio || 1);
   const H = graphCanvas.height / (window.devicePixelRatio || 1);
   const c = graphCtx;
+  graphHitPoints = [];
   c.clearRect(0, 0, W, H);
   c.fillStyle = '#1e293b';
   c.fillRect(0, 0, W, H);
 
   if (dataPoints.length === 0) {
+    clearGraphHover(true);
     c.fillStyle = '#94a3b8'; c.font = '13px "Noto Sans KR"'; c.textAlign = 'center';
     c.fillText('데이터가 추가되면', W / 2, H / 2 - 10);
     c.fillText('그래프가 나타납니다', W / 2, H / 2 + 10);
@@ -658,19 +938,82 @@ function drawGraph() {
   // Data points
   dataPoints.forEach((p, i) => {
     const cx = toX(p.x), cy = toY(p.y);
+    const isHovered = hoveredGraphPointId === p.id;
+    graphHitPoints.push({ id: p.id, x: p.x, y: p.y, cx, cy });
     // Point
     c.beginPath(); c.arc(cx, cy, 5, 0, Math.PI * 2);
-    c.fillStyle = '#3b82f6'; c.fill();
+    c.fillStyle = isHovered ? '#f59e0b' : '#3b82f6'; c.fill();
     c.strokeStyle = '#fff'; c.lineWidth = 1.5; c.stroke();
+    if (isHovered) {
+      c.beginPath(); c.arc(cx, cy, 11, 0, Math.PI * 2);
+      c.strokeStyle = 'rgba(245,158,11,.55)'; c.lineWidth = 3; c.stroke();
+    }
     // Pulse for latest
     if (i === dataPoints.length - 1) {
       c.beginPath(); c.arc(cx, cy, 10, 0, Math.PI * 2);
       c.strokeStyle = 'rgba(245,158,11,.4)'; c.lineWidth = 2; c.stroke();
     }
-    // Label
-    c.fillStyle = '#94a3b8'; c.font = '9px "Noto Sans KR"'; c.textAlign = 'left';
-    c.fillText(`(${p.x}, ${p.y})`, cx + 8, cy - 4);
   });
+}
+
+function handleGraphHover(e) {
+  if (graphHitPoints.length === 0) {
+    clearGraphHover();
+    return;
+  }
+  const rect = graphCanvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  let hovered = null;
+  let bestDist = Infinity;
+  graphHitPoints.forEach(point => {
+    const dx = mx - point.cx;
+    const dy = my - point.cy;
+    const dist = Math.hypot(dx, dy);
+    if (dist <= 12 && dist < bestDist) {
+      hovered = point;
+      bestDist = dist;
+    }
+  });
+
+  if (!hovered) {
+    clearGraphHover();
+    return;
+  }
+
+  if (hoveredGraphPointId !== hovered.id) {
+    hoveredGraphPointId = hovered.id;
+    updateDataTableHighlight();
+    drawGraph();
+  }
+  showGraphTooltip(hovered);
+}
+
+function showGraphTooltip(point) {
+  graphTooltipValue.textContent = `(${formatN(point.x)}, ${formatN(point.y)})`;
+  graphTooltip.classList.add('show');
+  const body = graphCanvas.parentElement;
+  const tooltipWidth = graphTooltip.offsetWidth || 110;
+  const x = Math.min(Math.max(point.cx, tooltipWidth / 2 + 8), body.clientWidth - tooltipWidth / 2 - 8);
+  const y = Math.max(point.cy - 14, 44);
+  graphTooltip.style.left = `${x}px`;
+  graphTooltip.style.top = `${y}px`;
+  graphCanvas.style.cursor = 'pointer';
+}
+
+function hideGraphTooltip() {
+  graphTooltip.classList.remove('show');
+  graphCanvas.style.cursor = '';
+}
+
+function clearGraphHover(skipRedraw) {
+  const hadHover = hoveredGraphPointId !== null;
+  hoveredGraphPointId = null;
+  hideGraphTooltip();
+  updateDataTableHighlight();
+  if (!skipRedraw && hadHover && dataPoints.length > 0) {
+    drawGraph();
+  }
 }
 
 function formatN(v) {
@@ -679,20 +1022,45 @@ function formatN(v) {
   return v.toFixed(1);
 }
 
+function formatFormulaValue(v) {
+  if (!Number.isFinite(v)) return '0';
+  if (Number.isInteger(v)) return v.toString();
+  if (Math.abs(v) >= 1000) return Math.round(v).toString();
+  return v.toFixed(1);
+}
+
+function getFormulaText(type, a, b, c) {
+  if (type === 'linear') return `y = ${formatFormulaValue(a)} × x + ${formatFormulaValue(b)}`;
+  if (type === 'quadratic') return `y = ${formatFormulaValue(a)} × x × x + ${formatFormulaValue(b)} × x + ${formatFormulaValue(c)}`;
+  return `y = ${formatFormulaValue(a)} × √x + ${formatFormulaValue(b)}`;
+}
+
+function getFormulaHTML(type, a, b, c) {
+  if (type === 'linear') {
+    return `y = <span class="param-em">${formatFormulaValue(a)}</span> × x + <span class="param-em">${formatFormulaValue(b)}</span>`;
+  }
+  if (type === 'quadratic') {
+    return `y = <span class="param-em">${formatFormulaValue(a)}</span> × x × x + <span class="param-em">${formatFormulaValue(b)}</span> × x + <span class="param-em">${formatFormulaValue(c)}</span>`;
+  }
+  return `y = <span class="param-em">${formatFormulaValue(a)}</span> × √x + <span class="param-em">${formatFormulaValue(b)}</span>`;
+}
+
+function updateFormulaOverlay() {
+  const overlay = document.getElementById('formulaOverlay');
+  if (!overlay) return;
+  overlay.innerHTML = getFormulaHTML(funcType, paramA, paramB, paramC);
+}
+
 // ══════════════ SETTINGS ══════════════
 function openSettings() { document.getElementById('settingsModal').classList.add('show'); }
 function closeSettings() { document.getElementById('settingsModal').classList.remove('show'); }
 
 function updatePreview() {
   const type = document.getElementById('setType').value;
-  const a = document.getElementById('setA').value;
-  const b = document.getElementById('setB').value;
-  const c = document.getElementById('setC').value;
-  let txt;
-  if (type === 'linear') txt = `y = ${a} × x + ${b}`;
-  else if (type === 'quadratic') txt = `y = ${a} × x × x + ${b} × x + ${c}`;
-  else txt = `y = ${a} × √x + ${b}`;
-  document.getElementById('setPreview').textContent = txt;
+  const a = parseFloat(document.getElementById('setA').value) || 0;
+  const b = parseFloat(document.getElementById('setB').value) || 0;
+  const c = parseFloat(document.getElementById('setC').value) || 0;
+  document.getElementById('setPreview').textContent = getFormulaText(type, a, b, c);
 }
 
 function saveSettings() {
@@ -701,9 +1069,12 @@ function saveSettings() {
   paramB = parseFloat(document.getElementById('setB').value) || 0;
   paramC = parseFloat(document.getElementById('setC').value) || 0;
   noiseLevel = parseInt(document.getElementById('setNoise').value) || 0;
-  maxTime = parseFloat(document.getElementById('setMax').value) || 3;
+  maxTime = Math.min(parseFloat(document.getElementById('setMax').value) || 5, 5);
+  renderPowerBarScale();
+  cancelAutoFire();
   dataPoints = [];
   nextId = 1;
+  updateFormulaOverlay();
   renderDataTable();
   drawCannon();
   drawGraph();

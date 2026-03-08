@@ -4,93 +4,94 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OH Research Experiments</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#f4efe5;
-  --paper:#fffaf2;
-  --ink:#1f2937;
-  --muted:#6b7280;
-  --line:rgba(31,41,55,.12);
-  --accent:#c2410c;
-  --accent-soft:#fed7aa;
-  --accent-2:#0f766e;
-  --shadow:0 20px 45px rgba(31,41,55,.12);
-}
 *{box-sizing:border-box;}
+:root{
+  --bg:#0f172a;--panel:#1e293b;--accent:#f59e0b;--accent2:#3b82f6;
+  --accent3:#10b981;--text:#f1f5f9;--muted:#94a3b8;--border:#334155;
+  --shadow:0 24px 60px rgba(2,6,23,.36);
+}
 html,body{margin:0;padding:0;}
 body{
   min-height:100vh;
-  font-family:"Pretendard Variable","SUIT Variable","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
-  color:var(--ink);
+  font-family:'Noto Sans KR',sans-serif;
+  color:var(--text);
   background:
-    radial-gradient(circle at top left, rgba(194,65,12,.16), transparent 34%),
-    radial-gradient(circle at bottom right, rgba(15,118,110,.18), transparent 28%),
-    linear-gradient(135deg, #f5efe4 0%, #efe7d6 100%);
+    radial-gradient(circle at top left, rgba(245,158,11,.18), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(59,130,246,.2), transparent 32%),
+    linear-gradient(180deg, #111827 0%, var(--bg) 46%, #0b1220 100%);
+}
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background-image:
+    linear-gradient(rgba(148,163,184,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148,163,184,.05) 1px, transparent 1px);
+  background-size:36px 36px;
+  mask-image:linear-gradient(180deg, rgba(0,0,0,.38), rgba(0,0,0,0));
 }
 a{color:inherit;}
 .page{
+  position:relative;
   width:min(1120px, calc(100% - 32px));
   margin:0 auto;
-  padding:48px 0 56px;
+  padding:24px 0 36px;
 }
 .hero{
   position:relative;
   overflow:hidden;
-  background:rgba(255,250,242,.82);
-  border:1px solid rgba(255,255,255,.7);
-  border-radius:28px;
-  padding:38px 32px 34px;
+  padding:34px 32px 30px;
+  border:1px solid var(--border);
+  border-radius:30px;
+  background:rgba(30,41,59,.88);
   box-shadow:var(--shadow);
-  backdrop-filter:blur(10px);
+}
+.hero::before{
+  content:"";
+  position:absolute;
+  top:-70px;
+  right:-70px;
+  width:220px;
+  height:220px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(245,158,11,.24), rgba(245,158,11,0) 70%);
 }
 .hero::after{
   content:"";
   position:absolute;
-  right:-70px;
-  top:-70px;
-  width:220px;
-  height:220px;
+  left:-90px;
+  bottom:-110px;
+  width:260px;
+  height:260px;
   border-radius:50%;
-  background:radial-gradient(circle, rgba(194,65,12,.18), rgba(194,65,12,0));
+  background:radial-gradient(circle, rgba(59,130,246,.2), rgba(59,130,246,0) 72%);
 }
 .eyebrow{
+  position:relative;
+  z-index:1;
   display:inline-flex;
   align-items:center;
   gap:8px;
   padding:8px 12px;
   border-radius:999px;
-  background:rgba(255,255,255,.72);
-  border:1px solid var(--line);
+  border:1px solid rgba(245,158,11,.3);
+  background:rgba(245,158,11,.12);
+  color:var(--accent);
   font-size:13px;
   font-weight:700;
-  color:var(--accent);
 }
 h1{
+  position:relative;
+  z-index:1;
   margin:18px 0 10px;
-  font-size:clamp(34px, 6vw, 68px);
-  line-height:.98;
-  letter-spacing:-.04em;
-}
-.lead{
-  max-width:680px;
-  margin:0;
-  font-size:18px;
-  line-height:1.7;
-  color:#374151;
-}
-.meta{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  margin-top:22px;
-}
-.meta span{
-  padding:8px 12px;
-  border-radius:999px;
-  background:rgba(255,255,255,.76);
-  border:1px solid var(--line);
-  font-size:13px;
-  color:var(--muted);
+  font-family:'Jua',sans-serif;
+  font-size:clamp(38px, 6vw, 68px);
+  line-height:1;
+  letter-spacing:.01em;
 }
 .labs{
   display:grid;
@@ -99,15 +100,28 @@ h1{
   margin-top:22px;
 }
 .card{
+  position:relative;
   display:flex;
   flex-direction:column;
-  gap:14px;
+  gap:16px;
+  min-height:320px;
   padding:24px;
-  background:rgba(255,250,242,.86);
-  border:1px solid rgba(255,255,255,.72);
-  border-radius:24px;
+  border:1px solid var(--border);
+  border-radius:26px;
+  background:rgba(30,41,59,.9);
   box-shadow:var(--shadow);
-  backdrop-filter:blur(10px);
+  transition:transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+.card:hover{
+  transform:translateY(-2px);
+}
+.card.tone-cannon:hover{
+  border-color:rgba(245,158,11,.45);
+  box-shadow:0 28px 64px rgba(2,6,23,.42);
+}
+.card.tone-fitting:hover{
+  border-color:rgba(245,158,11,.45);
+  box-shadow:0 28px 64px rgba(2,6,23,.42);
 }
 .card-head{
   display:flex;
@@ -122,26 +136,46 @@ h1{
   font-weight:800;
   letter-spacing:.08em;
   text-transform:uppercase;
-  color:var(--accent-2);
 }
+.tone-cannon .card-kicker{color:var(--accent);}
+.tone-fitting .card-kicker{color:var(--accent);}
 .card h2{
   margin:0;
-  font-size:28px;
-  letter-spacing:-.03em;
+  font-family:'Jua',sans-serif;
+  font-size:30px;
+  line-height:1.1;
+  letter-spacing:.01em;
 }
 .badge{
-  min-width:52px;
-  height:52px;
+  min-width:56px;
+  height:56px;
   display:grid;
   place-items:center;
-  border-radius:18px;
-  background:linear-gradient(135deg, var(--accent-soft), #fff);
-  font-size:24px;
+  border-radius:20px;
+  border:1px solid rgba(148,163,184,.18);
+  font-size:26px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.03);
 }
-.card p{
+.badge svg{
+  width:32px;
+  height:32px;
+  display:block;
+}
+.badge-icon-cannon{
+  width:38px !important;
+  height:38px !important;
+}
+.tone-cannon .badge{
+  color:#fbbf24;
+  background:linear-gradient(135deg, rgba(245,158,11,.26), rgba(245,158,11,.06));
+}
+.tone-fitting .badge{
+  background:linear-gradient(135deg, rgba(245,158,11,.26), rgba(245,158,11,.06));
+}
+.card-copy{
   margin:0;
-  color:#4b5563;
-  line-height:1.7;
+  color:#dbe4f1;
+  line-height:1.75;
 }
 .features{
   margin:0;
@@ -153,14 +187,14 @@ h1{
 .features li{
   padding:12px 14px;
   border-radius:16px;
-  background:rgba(255,255,255,.62);
-  border:1px solid var(--line);
+  border:1px solid rgba(148,163,184,.16);
+  background:rgba(15,23,42,.76);
+  color:var(--muted);
   font-size:14px;
-  line-height:1.5;
+  line-height:1.55;
 }
 .actions{
   display:flex;
-  flex-wrap:wrap;
   gap:10px;
   margin-top:auto;
 }
@@ -170,51 +204,25 @@ h1{
   justify-content:center;
   min-height:48px;
   padding:0 18px;
+  border:none;
   border-radius:999px;
   text-decoration:none;
-  font-weight:800;
+  font-family:'Jua',sans-serif;
+  font-size:15px;
+  background:var(--accent);
+  color:#111827;
+  box-shadow:0 14px 28px rgba(245,158,11,.24);
   transition:transform .16s ease, box-shadow .16s ease, background .16s ease;
 }
 .button:hover{
   transform:translateY(-1px);
 }
-.button-primary{
-  background:var(--accent);
-  color:#fffaf2;
-  box-shadow:0 12px 24px rgba(194,65,12,.22);
-}
-.button-secondary{
-  background:rgba(255,255,255,.72);
-  color:var(--ink);
-  border:1px solid var(--line);
-}
-.footer-note{
-  margin-top:20px;
-  padding:20px 22px;
-  border-radius:22px;
-  background:rgba(31,41,55,.92);
-  color:#e5e7eb;
-  box-shadow:var(--shadow);
-}
-.footer-note p{
-  margin:0 0 8px;
-  line-height:1.7;
-}
-.footer-note p:last-child{margin-bottom:0;}
-code{
-  font-family:"SFMono-Regular","Menlo","Consolas",monospace;
-  font-size:.95em;
-  background:rgba(255,255,255,.12);
-  padding:2px 7px;
-  border-radius:8px;
-}
 @media (max-width: 860px){
-  .page{width:min(100% - 24px, 1120px);padding:24px 0 32px;}
-  .hero{padding:26px 20px 22px;border-radius:24px;}
+  .page{width:min(100% - 24px, 1120px);padding:18px 0 28px;}
+  .hero{padding:26px 20px 24px;border-radius:24px;}
   .labs{grid-template-columns:1fr;}
-  .card{padding:20px;}
-  h1{font-size:40px;}
-  .lead{font-size:16px;}
+  .card{min-height:auto;padding:20px;border-radius:22px;}
+  h1{font-size:42px;}
 }
 </style>
 </head>
@@ -222,32 +230,38 @@ code{
   <main class="page">
     <section class="hero">
       <span class="eyebrow">OH Research · Browser Experiments</span>
-      <h1>실험 페이지</h1>
-      <p class="lead">
-        <code>Experiments</code> 아래에서 원하는 실험을 선택하면 됩니다.
-      </p> 
+      <h1>탐구 실험실</h1>
     </section>
 
     <section class="labs" aria-label="실험 목록">
-      <article class="card">
+      <article class="card tone-cannon">
         <div class="card-head">
           <div>
-            <span class="card-kicker">Interactive Lab</span>
+            <span class="card-kicker">Table &amp; Graph</span>
             <h2>대포 실험실</h2>
           </div>
-          <div class="badge" aria-hidden="true">🔫</div>
+          <div class="badge" aria-hidden="true">
+            <svg class="badge-icon-cannon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 34H24" stroke="#f8fafc" stroke-width="5" stroke-linecap="round" opacity=".9"/>
+              <path d="M8 42H22" stroke="#f8fafc" stroke-width="5" stroke-linecap="round" opacity=".7"/>
+              <path d="M16 26H27" stroke="#f8fafc" stroke-width="5" stroke-linecap="round" opacity=".55"/>
+              <circle cx="40" cy="34" r="13" fill="#0f172a"/>
+              <circle cx="40" cy="34" r="12" stroke="#334155" stroke-width="2"/>
+              <circle cx="35.5" cy="29.5" r="3.5" fill="rgba(255,255,255,.18)"/>
+            </svg>
+          </div>
         </div>
-        <p>발사 시간과 거리의 관계를 직접 관찰하면서 데이터와 좌표평면을 함께 보는 실험입니다.</p>
+        <p class="card-copy">누르는 시간과 거리의 관계를 관찰하면서, 발사 결과를 표와 좌표평면으로 함께 확인하는 실험입니다.</p>
         <ul class="features">
-          <li>스페이스바 또는 숫자 입력으로 발사</li>
-          <li>데이터 테이블과 그래프를 동시에 확인</li>
+          <li>스페이스바 충전 발사와 자동 발사 지원</li>
+          <li>데이터 표와 그래프 점을 연결해서 확인 가능</li>
         </ul>
         <div class="actions">
-          <a class="button button-primary" href="./cannon_lab.html" target="_blank" rel="noopener">실험 시작</a>
+          <a class="button" href="./cannon_lab.html">실험 시작</a>
         </div>
       </article>
 
-      <article class="card">
+      <article class="card tone-fitting">
         <div class="card-head">
           <div>
             <span class="card-kicker">Pattern Fitting</span>
@@ -255,17 +269,16 @@ code{
           </div>
           <div class="badge" aria-hidden="true">📈</div>
         </div>
-        <p>좌표 데이터를 보고 1차식 또는 2차식 규칙을 추정해보는 피팅 실험입니다.</p>
+        <p class="card-copy">좌표 데이터를 보고 1차식 또는 2차식 규칙을 슬라이더로 조절하면서 그래프 변화를 즉시 보는 실험입니다.</p>
         <ul class="features">
-          <li>점 데이터를 수동 입력하거나 URL 파라미터로 전달</li>
-          <li>오차 점수와 시행 기록으로 추정 과정 추적</li>
+          <li>수동 입력과 프리셋 데이터 불러오기 지원</li>
+          <li>파라미터 슬라이더와 시각화가 즉시 연동</li>
         </ul>
         <div class="actions">
-          <a class="button button-primary" href="./fitting_lab.html" target="_blank" rel="noopener">실험 시작</a>
+          <a class="button" href="./fitting_lab.html">실험 시작</a>
         </div>
       </article>
     </section>
-
   </main>
 </body>
 </html>
