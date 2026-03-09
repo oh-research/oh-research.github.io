@@ -78,7 +78,19 @@ body{
 .panel-body{flex:1;overflow:hidden;position:relative;}
 
 /* Cannon Scene */
-.cannon-panel-body{background:#0f172a;}
+.cannon-panel-body{
+  background:#0f172a;
+  display:flex;
+  flex-direction:column;
+  overflow:auto;
+  padding:0;
+}
+.cannon-scene{
+  position:relative;
+  flex:1 1 320px;
+  min-height:320px;
+  overflow:hidden;
+}
 #cannonCanvas{width:100%;height:100%;display:block;}
 .stage-strip{display:flex;flex-wrap:wrap;gap:8px;}
 .stage-pill{
@@ -130,13 +142,9 @@ body{
   100%{transform:translate(-50%,-50%) scale(1);opacity:1;}
 }
 .control-card{
-  position:absolute;
-  left:50%;
-  transform:translateX(-50%);
-  width:min(560px, calc(100% - 28px));
-  bottom:14px;
-  z-index:10;
-  height:296px;
+  position:relative;
+  width:min(720px, 100%);
+  min-height:296px;
   padding:14px;
   border:1px solid rgba(148,163,184,.18);
   border-radius:20px;
@@ -146,6 +154,13 @@ body{
   display:flex;
   flex-direction:column;
   overflow:hidden;
+  margin:0 auto;
+}
+.control-dock{
+  flex-shrink:0;
+  padding:14px;
+  border-top:1px solid rgba(148,163,184,.14);
+  background:linear-gradient(180deg, rgba(15,23,42,.72), rgba(15,23,42,.92));
 }
 .control-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px;}
 .card-stage{font-family:'Jua',sans-serif;font-size:18px;color:#fff;}
@@ -294,13 +309,18 @@ body{
   .app{grid-template-columns:1fr;}
   .panel{border-right:none;border-bottom:1px solid var(--border);}
   .panel-body{height:46vh;}
+  .cannon-panel-body{height:auto;min-height:640px;}
+  .cannon-scene{min-height:320px;}
 }
 @media(max-width:900px){
   .page{width:calc(100vw - 20px);height:auto;min-height:calc(100vh - 20px);margin:10px auto;border-radius:22px;}
   .title-bar{padding:10px 12px;align-items:flex-start;}
   .title-text{font-size:19px;}
   .panel-body{height:52vh;}
-  .control-card{left:14px;right:14px;transform:none;width:auto;height:auto;min-height:296px;}
+  .cannon-panel-body{height:auto;min-height:620px;}
+  .cannon-scene{min-height:300px;}
+  .control-dock{padding:12px;}
+  .control-card{width:100%;min-height:296px;}
   .control-card-header{flex-direction:column;align-items:flex-start;}
   .mission-chip{white-space:normal;}
   .field-grid{grid-template-columns:1fr;}
@@ -344,9 +364,12 @@ body{
         </div>
       </div>
       <div class="panel-body cannon-panel-body">
-        <canvas id="cannonCanvas"></canvas>
-        <div class="scene-chip" id="sceneChip">여러 힘 x를 넣어 도달 거리 y를 관찰해 보세요.</div>
-        <div class="celebration" id="celebration">🎉 완벽!</div>
+        <div class="cannon-scene">
+          <canvas id="cannonCanvas"></canvas>
+          <div class="scene-chip" id="sceneChip">여러 힘 x를 넣어 도달 거리 y를 관찰해 보세요.</div>
+          <div class="celebration" id="celebration">🎉 완벽!</div>
+        </div>
+        <div class="control-dock">
         <div class="control-card">
           <div class="control-card-header">
             <div>
@@ -376,6 +399,7 @@ body{
           </div>
 
           <div class="result-note" id="resultNote">추천값 0.5, 1.0, 1.5, 2.0부터 시작해 보세요.</div>
+        </div>
         </div>
       </div>
     </div>
@@ -494,7 +518,6 @@ const stageTitle = document.getElementById('stageTitle');
 const stageDescription = document.getElementById('stageDescription');
 const missionChip = document.getElementById('missionChip');
 const celebration = document.getElementById('celebration');
-const controlCard = document.querySelector('.control-card');
 const scoreBadge = document.getElementById('scoreBadge');
 const trialBadge = document.getElementById('trialBadge');
 const forceFieldLabel = document.getElementById('forceFieldLabel');
@@ -590,16 +613,10 @@ function distanceToSceneX(value, sceneRange, width) {
 }
 
 function getGroundY(H) {
-  const preferred = H * 0.7;
-  if (!controlCard || !cannonCanvas.parentElement) return preferred;
-
-  const parentRect = cannonCanvas.parentElement.getBoundingClientRect();
-  const cardRect = controlCard.getBoundingClientRect();
-  if (!parentRect.height || !cardRect.height) return preferred;
-
-  const overlayTop = cardRect.top - parentRect.top;
-  const maxGround = overlayTop - 40;
-  return Math.max(H * 0.48, Math.min(preferred, maxGround));
+  const preferred = H * 0.72;
+  const minGround = H * 0.56;
+  const maxGround = H - 46;
+  return Math.max(minGround, Math.min(preferred, maxGround));
 }
 
 function niceDistStep(max) {
@@ -1000,7 +1017,12 @@ function handleShotComplete(point) {
     challengeUnlocked = true;
     predictStageCompleted = true;
     if (point.predictionError === 0) showCelebration();
-    setStageMessage('predict', `x = ${formatX(point.x)}일 때 예상은 ${formatY(point.predictedY)}m, 실제는 ${formatY(point.y)}m였습니다. 오차는 ${formatY(point.predictionError)}m입니다.`, point.predictionError <= 2 ? 'success' : 'warning');
+    if (point.predictionError === 0) {
+      setStageMessage('predict', `x = ${formatX(point.x)}에서 예측이 정확히 맞았습니다. 오차는 ${formatY(point.predictionError)}m입니다.`, 'success');
+    } else {
+      const relation = point.y > point.predictedY ? '더 멀리 날아갔습니다.' : '덜 날아갔습니다.';
+      setStageMessage('predict', `x = ${formatX(point.x)}에서 예측보다 ${relation} 오차는 ${formatY(point.predictionError)}m입니다.`, point.predictionError <= 2 ? 'success' : 'warning');
+    }
   }
 
   if (point.stage === 'challenge') {
@@ -1145,7 +1167,7 @@ function drawTargetMarker(c, px, groundY, value) {
   c.restore();
 }
 
-function drawFlag(c, px, groundY, dist) {
+function drawFlag(c, px, groundY, dist, labelText) {
   c.strokeStyle = '#94a3b8';
   c.lineWidth = 1.5;
   c.beginPath();
@@ -1163,7 +1185,7 @@ function drawFlag(c, px, groundY, dist) {
   c.fillStyle = '#f1f5f9';
   c.font = '10px "Jua"';
   c.textAlign = 'center';
-  c.fillText(`${formatY(dist)}m`, px, groundY - 32);
+  c.fillText(labelText || `${formatY(dist)}m`, px, groundY - 32);
 }
 
 function drawCannonBody(c, groundY) {
@@ -1215,6 +1237,7 @@ function drawCannonSceneBase(c, W, H, sceneRange) {
   drawCannonBody(c, groundY);
 
   dataPoints.forEach(point => {
+    if (point.revealedY === false) return;
     const px = distanceToSceneX(point.y, sceneRange, W);
     drawFlag(c, px, groundY, point.y);
   });
@@ -1261,6 +1284,7 @@ function animateFrame(now) {
     x,
     y,
     stage: animData.stage,
+    revealedY: animData.stage !== 'predict',
     predictedY: animData.predictedY,
     predictionError: animData.predictedY === null ? null : roundY(Math.abs(y - animData.predictedY)),
     targetY: animData.targetY,
@@ -1339,7 +1363,7 @@ function drawCannonFrame(progress, x, y, sceneRange, particleElapsed) {
       c.fill();
     });
     c.globalAlpha = 1;
-    drawFlag(c, landX, landY, y);
+    drawFlag(c, landX, landY, y, animData.stage === 'predict' ? '?m' : null);
   }
 }
 
@@ -1377,7 +1401,7 @@ function renderDataTable() {
     tr.innerHTML = `
       <td>${index + 1}</td>
       <td>${formatX(point.x)}</td>
-      <td>${formatY(point.y)}</td>
+      <td>${point.revealedY === false ? '?' : formatY(point.y)}</td>
       <td class="memo-cell">${getPointMemoHTML(point)}</td>
     `;
     dataBody.appendChild(tr);
@@ -1454,7 +1478,9 @@ function drawGraph() {
   c.fillStyle = '#1e293b';
   c.fillRect(0, 0, W, H);
 
-  if (dataPoints.length === 0) {
+  const visiblePoints = dataPoints.filter(point => point.revealedY !== false);
+
+  if (visiblePoints.length === 0) {
     clearGraphHover(true);
     c.fillStyle = '#94a3b8';
     c.font = '13px "Noto Sans KR"';
@@ -1465,8 +1491,8 @@ function drawGraph() {
   }
 
   const pad = { top: 25, right: 25, bottom: 40, left: 50 };
-  const xs = dataPoints.map(point => point.x);
-  const ys = dataPoints.map(point => point.y);
+  const xs = visiblePoints.map(point => point.x);
+  const ys = visiblePoints.map(point => point.y);
   if (currentStage === 'challenge' && challengeMission) ys.push(challengeMission.targetY);
 
   let xMin = Math.min(0, Math.min(...xs));
@@ -1554,7 +1580,7 @@ function drawGraph() {
   c.restore();
 
   const highlightedPointId = getHighlightedPointId();
-  dataPoints.forEach((point, index) => {
+  visiblePoints.forEach((point, index) => {
     const cx = toX(point.x);
     const cy = toY(point.y);
     const highlighted = highlightedPointId === point.id;
