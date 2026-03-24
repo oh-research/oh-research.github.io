@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OH Research Experiments</title>
+<title>직선과 추세선 — 실습 실험실</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -229,53 +229,45 @@ h1{
 <body>
   <main class="page">
     <section class="hero">
-      <span class="eyebrow">OH Research · Browser Experiments</span>
-      <h1>탐구 실험실</h1>
+      <span class="eyebrow">과학영재교육원 · 직선과 추세선</span>
+      <h1>실습 실험실</h1>
     </section>
 
     <section class="labs" aria-label="실험 목록">
       <article class="card tone-cannon">
         <div class="card-head">
           <div>
-            <span class="card-kicker">Table &amp; Graph</span>
-            <h2>대포 실험실</h2>
+            <span class="card-kicker">3차시</span>
+            <h2>직선 탐험</h2>
           </div>
-          <div class="badge" aria-hidden="true">
-            <svg class="badge-icon-cannon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 34H24" stroke="#f8fafc" stroke-width="5" stroke-linecap="round" opacity=".9"/>
-              <path d="M8 42H22" stroke="#f8fafc" stroke-width="5" stroke-linecap="round" opacity=".7"/>
-              <path d="M16 26H27" stroke="#f8fafc" stroke-width="5" stroke-linecap="round" opacity=".55"/>
-              <circle cx="40" cy="34" r="13" fill="#0f172a"/>
-              <circle cx="40" cy="34" r="12" stroke="#334155" stroke-width="2"/>
-              <circle cx="35.5" cy="29.5" r="3.5" fill="rgba(255,255,255,.18)"/>
-            </svg>
-          </div>
+          <div class="badge" aria-hidden="true">📐</div>
         </div>
-        <p class="card-copy">누르는 시간과 거리의 관계를 관찰하면서, 발사 결과를 표와 좌표평면으로 함께 확인하는 실험입니다.</p>
+        <p class="card-copy">직선의 식 y = ax + b를 체험하고, 두 점으로 직선을 구하는 방법을 단계별로 배웁니다.</p>
         <ul class="features">
-          <li>스페이스바 충전 발사와 자동 발사 지원</li>
-          <li>데이터 표와 그래프 점을 연결해서 확인 가능</li>
+          <li><strong>1단계</strong> &nbsp; 슬라이더로 기울기(a)와 시작 높이(b)를 바꿔 보기</li>
+          <li><strong>2단계</strong> &nbsp; 두 점이 주어지면 직선의 식 구하기</li>
+          <li><strong>3단계</strong> &nbsp; 한 직선 위의 세 점 — 어떤 두 점을 골라도 같은 직선!</li>
         </ul>
         <div class="actions">
-          <a class="button" href="./cannon_lab.html">실험 시작</a>
+          <a class="button" href="./fitting_lab_3.html">실험 시작</a>
         </div>
       </article>
 
       <article class="card tone-fitting">
         <div class="card-head">
           <div>
-            <span class="card-kicker">Pattern Fitting</span>
-            <h2>규칙 맞추기 실험실</h2>
+            <span class="card-kicker">4차시</span>
+            <h2>오차와 추세선</h2>
           </div>
           <div class="badge" aria-hidden="true">📈</div>
         </div>
-        <p class="card-copy">좌표 데이터를 보고 1차식 또는 2차식 규칙을 슬라이더로 조절하면서 그래프 변화를 즉시 보는 실험입니다.</p>
+        <p class="card-copy">직선 위에 없는 점들의 오차를 계산하고, 오차² 합이 가장 작은 추세선을 찾아봅니다.</p>
         <ul class="features">
-          <li>수동 입력과 프리셋 데이터 불러오기 지원</li>
-          <li>파라미터 슬라이더와 시각화가 즉시 연동</li>
+          <li><strong>4단계</strong> &nbsp; 두 점으로 직선을 긋고 나머지 점의 세로 거리와 제곱 구하기</li>
+          <li><strong>5단계</strong> &nbsp; 컴퓨터가 오차² 합이 가장 작은 추세선을 찾아가는 애니메이션</li>
         </ul>
         <div class="actions">
-          <a class="button" href="./fitting_lab.html">실험 시작</a>
+          <a class="button" href="./fitting_lab_4.html">실험 시작</a>
         </div>
       </article>
     </section>
