@@ -35,7 +35,9 @@ header span{font-size:14px;color:var(--muted);}
 .data-table{width:100%;border-collapse:collapse;font-size:12px;}
 .data-table th,.data-table td{padding:5px 6px;text-align:center;border:1px solid var(--border);}
 .data-table th{background:rgba(59,130,246,.15);color:var(--accent2);font-weight:700;}
-.data-table td{color:var(--text);}
+.data-table td{color:var(--text);cursor:pointer;transition:all .2s;}
+.data-table tr.highlight td{background:rgba(245,158,11,.25);color:#f59e0b;font-weight:700;}
+.data-table tr:hover td{background:rgba(245,158,11,.1);}
 
 .stat-box{
   padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:12px;
@@ -73,12 +75,19 @@ canvas{display:block;position:absolute;top:0;left:0;}
   background:rgba(239,68,68,.9);padding:14px 22px;border-radius:16px;
   font-family:'Jua',sans-serif;text-align:center;z-index:2;
   box-shadow:0 8px 30px rgba(239,68,68,.4);
-  opacity:0;transition:opacity .6s;
+  opacity:0;transform:scale(0.3) translateY(40px);
+  transition:opacity .5s cubic-bezier(.34,1.56,.64,1), transform .6s cubic-bezier(.34,1.56,.64,1);
 }
-.prediction-badge.visible{opacity:1;}
+.prediction-badge.visible{opacity:1;transform:scale(1) translateY(0);}
 .prediction-badge .label{font-size:13px;color:rgba(255,255,255,.8);}
 .prediction-badge .year{font-size:36px;color:#fff;line-height:1.1;}
 .prediction-badge .note{font-size:12px;color:rgba(255,255,255,.7);margin-top:4px;}
+
+@keyframes pulse-glow{
+  0%,100%{box-shadow:0 8px 30px rgba(239,68,68,.4);}
+  50%{box-shadow:0 8px 50px rgba(239,68,68,.8),0 0 80px rgba(239,68,68,.3);}
+}
+.prediction-badge.visible{animation:pulse-glow 2s ease-in-out infinite;}
 
 @media(max-width:800px){
   .main{flex-direction:column;}
@@ -100,7 +109,7 @@ canvas{display:block;position:absolute;top:0;left:0;}
     </div>
 
     <div>
-      <h2>📐 추세선 정보</h2>
+      <h2>📈 추세선 정보</h2>
       <div class="stat-box" id="formulaBox">
         <div class="stat-label">추세선</div>
         <div class="stat-value" id="formulaText" style="font-size:18px;">—</div>
@@ -120,6 +129,15 @@ canvas{display:block;position:absolute;top:0;left:0;}
       </div>
     </div>
 
+    <div id="hlErrorBox" style="display:none;">
+      <h2>📍 선택된 점</h2>
+      <div class="stat-box">
+        <div class="stat-label" id="hlPointLabel">—</div>
+        <div class="stat-value" id="hlErrorValue" style="font-size:22px;color:var(--danger);">—</div>
+        <div class="stat-sub" id="hlErrorSub"></div>
+      </div>
+    </div>
+
     <div class="btn-row" style="display:flex;gap:8px;">
       <button class="btn btn-primary" id="btnStart" onclick="startAnimation()" style="flex:1;white-space:nowrap;">▶ 추세선 애니메이션</button>
       <button class="btn btn-reset" onclick="resetAll()" style="flex:0 0 auto;white-space:nowrap;">↺ 초기화</button>
@@ -128,7 +146,7 @@ canvas{display:block;position:absolute;top:0;left:0;}
 
   <div class="canvas-wrap" id="canvasWrap">
     <canvas id="chart"></canvas>
-    <div class="overlay" id="overlay">데이터 로딩 완료 — ▶ 버튼을 누르세요</div>
+    <div class="overlay" id="overlay">데이터 확인 후 ▶ 버튼을 누르세요</div>
     <div class="prediction-badge" id="predBadge">
       <div class="label">아열대 15°C 도달 예측</div>
       <div class="year" id="predYear">—</div>
@@ -170,22 +188,112 @@ function calcSSE(a,b){
 // ── Random initial line ──
 let initA, initB;
 function randomInit(){
-  // random slope: -0.08 ~ +0.12 (wide range around true ~0.04)
-  initA=(Math.random()*0.20-0.08);
-  // random intercept that keeps line in visible range around data
-  // at mean year, temp should be roughly 10~15
-  const tempAtMean=10+Math.random()*5;
+  // Ensure initial slope is different from final (reg.a ≈ 0.04)
+  // but not so extreme the line leaves the visible chart area
+  if(Math.random()>0.5){
+    initA=-0.04-Math.random()*0.04; // negative slope: -0.04 ~ -0.08
+  }else{
+    initA=0.08+Math.random()*0.04;  // steep positive: 0.08 ~ 0.12
+  }
+  // Intercept: keep line roughly in visible temp range at mean year
+  const tempAtMean=11+Math.random()*3;
   initB=tempAtMean-initA*MEAN_YEAR;
 }
 randomInit();
+
+// ── Gradient descent simulation for a,b convergence ──
+// Work in normalized coordinates (x_norm = (year-MEAN_YEAR)/sd_year) for numerical stability,
+// then convert back to original a,b for display.
+const SD_YEAR=Math.sqrt(RAW_YEARS.reduce((s,y)=>s+(y-MEAN_YEAR)**2,0)/N);
+// Normalized regression: a_n = reg.a * SD_YEAR,  b_n = reg.b + reg.a * MEAN_YEAR
+// Original from normalized: a = a_n / SD_YEAR,  b = b_n - a_n * MEAN_YEAR / SD_YEAR
+
+function toNorm(a,b){ return { an: a*SD_YEAR, bn: b + a*MEAN_YEAR }; }
+function fromNorm(an,bn){ return { a: an/SD_YEAR, b: bn - an*MEAN_YEAR/SD_YEAR }; }
+
+let descentPath=[];
+function computeDescentPath(){
+  descentPath=[];
+  // Normalize data
+  const xn=RAW_YEARS.map(y=>(y-MEAN_YEAR)/SD_YEAR);
+  // Start in normalized space
+  let {an,bn}=toNorm(initA,initB);
+  let va=0, vb=0;
+  const lr=0.008;    // gentle learning rate — keeps line on screen
+  const momentum=0.7;
+  const steps=200;
+  const {an: targetAn, bn: targetBn}=toNorm(reg.a,reg.b);
+
+  descentPath.push(fromNorm(an,bn));
+  for(let step=0;step<steps;step++){
+    // Compute gradients in normalized space
+    let dan=0, dbn=0;
+    for(let i=0;i<N;i++){
+      const err=RAW_TEMPS[i]-(an*xn[i]+bn);
+      dan+=-2*err*xn[i]/N;
+      dbn+=-2*err/N;
+    }
+    va=momentum*va - lr*dan;
+    vb=momentum*vb - lr*dbn;
+    an+=va;
+    bn+=vb;
+    descentPath.push(fromNorm(an,bn));
+
+    // Early stop if very close to target
+    if(Math.abs(an-targetAn)<1e-6 && Math.abs(bn-targetBn)<1e-5) break;
+  }
+  // Ensure last point is exact regression
+  descentPath.push({a:reg.a,b:reg.b});
+}
+computeDescentPath();
 
 // ── Build data table ──
 (function(){
   const t=document.getElementById('dataTable');
   let h='<tr><th>연도</th><th>°C</th></tr>';
-  for(let i=0;i<N;i++) h+=`<tr><td>'${String(RAW_YEARS[i]).slice(2)}</td><td>${RAW_TEMPS[i]}</td></tr>`;
+  for(let i=0;i<N;i++) h+=`<tr data-idx="${i}"><td>'${String(RAW_YEARS[i]).slice(2)}</td><td>${RAW_TEMPS[i]}</td></tr>`;
   t.innerHTML=h;
+  // Table row click → highlight
+  t.querySelectorAll('tr[data-idx]').forEach(row=>{
+    row.addEventListener('click',()=>{
+      const idx=parseInt(row.dataset.idx);
+      setHighlight(highlightIdx===idx?-1:idx);
+    });
+  });
 })();
+
+// ── Highlight state ──
+let highlightIdx=-1; // -1 = none
+function setHighlight(idx){
+  highlightIdx=idx;
+  // Update table highlight
+  document.querySelectorAll('#dataTable tr[data-idx]').forEach(r=>{
+    r.classList.toggle('highlight',parseInt(r.dataset.idx)===idx);
+  });
+  // Update error info panel
+  updateHlErrorBox(idx);
+  // Redraw if not animating
+  if(!animId) drawScene(phase,phaseT);
+}
+function updateHlErrorBox(idx){
+  const box=document.getElementById('hlErrorBox');
+  if(idx<0){box.style.display='none';return;}
+  box.style.display='block';
+  const yr=RAW_YEARS[idx], tmp=RAW_TEMPS[idx];
+  document.getElementById('hlPointLabel').textContent=`${yr}년 — 실측 ${tmp}°C`;
+  if(phase>=0){
+    // We have a current line (initA/initB or reg.a/reg.b depending on phase)
+    const a=(phase>=2||phase===1&&phaseT>=1)?reg.a:initA;
+    const b=(phase>=2||phase===1&&phaseT>=1)?reg.b:initB;
+    const pred=a*yr+b;
+    const err=tmp-pred;
+    document.getElementById('hlErrorValue').textContent=`오차: ${err>=0?'+':''}${err.toFixed(2)}°C`;
+    document.getElementById('hlErrorSub').textContent=`예측값 ${pred.toFixed(2)}°C | 오차² = ${(err*err).toFixed(3)}`;
+  }else{
+    document.getElementById('hlErrorValue').textContent=`${tmp}°C`;
+    document.getElementById('hlErrorSub').textContent='추세선 생성 전';
+  }
+}
 
 // ── Canvas setup ──
 const canvas=document.getElementById('chart');
@@ -199,9 +307,27 @@ function resize(){
   canvas.width=W*r;canvas.height=H*r;
   canvas.style.width=W+'px';canvas.style.height=H+'px';
   ctx.setTransform(r,0,0,r,0,0);
-  drawScene(phase,phaseT);
+  if(!animId) drawScene(phase,phaseT);
 }
 window.addEventListener('resize',resize);
+
+// ── Canvas click → find nearest data point ──
+canvas.addEventListener('click',(e)=>{
+  const rect=canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  let bestDist=Infinity, bestIdx=-1;
+  for(let i=0;i<N;i++){
+    const px=xOf(RAW_YEARS[i]), py=yOf(RAW_TEMPS[i]);
+    const d=Math.hypot(mx-px,my-py);
+    if(d<bestDist){bestDist=d;bestIdx=i;}
+  }
+  if(bestDist<25){
+    setHighlight(highlightIdx===bestIdx?-1:bestIdx);
+  }else{
+    setHighlight(-1);
+  }
+});
+canvas.style.cursor='pointer';
 
 // ── Chart params ──
 const PAD={top:50,right:40,bottom:80,left:90};
@@ -215,26 +341,111 @@ function yOf(temp){return PAD.top+(TEMP_MAX-temp)/(TEMP_MAX-TEMP_MIN)*(H-PAD.top
 function lerp(from,to,t){return from+(to-from)*t;}
 
 // ── Drawing ──
-// phase 0 = idle (show initial line), 1 = converging, 2 = extending to 15°C
+// phase: -1=dot intro, 0=idle, 1=converging, 2=extending
 let phase=0, phaseT=0;
 
-function drawScene(ph,t){
-  ctx.clearRect(0,0,W,H);
+// ── Particles system ──
+let particles=[];
+function spawnParticles(x,y,color,count,speed){
+  for(let i=0;i<count;i++){
+    const angle=Math.random()*Math.PI*2;
+    const v=speed*(0.5+Math.random());
+    particles.push({
+      x,y,vx:Math.cos(angle)*v,vy:Math.sin(angle)*v,
+      life:1,decay:0.01+Math.random()*0.02,
+      size:2+Math.random()*4,color,
+      gravity:0.08+Math.random()*0.05
+    });
+  }
+}
+function updateAndDrawParticles(){
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.x+=p.vx;p.y+=p.vy;p.vy+=p.gravity;
+    p.vx*=0.98;p.life-=p.decay;
+    if(p.life>0){
+      ctx.globalAlpha=p.life*0.8;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.size*p.life,0,Math.PI*2);
+      ctx.fillStyle=p.color;ctx.fill();
+      ctx.globalAlpha=1;
+    }else{
+      particles.splice(i,1);
+    }
+  }
+}
 
-  // Grid
-  ctx.strokeStyle='rgba(148,163,184,.1)';ctx.lineWidth=1;
+// ── Screen shake ──
+let shakeAmount=0, shakeDecay=0.9;
+
+// ── Data point pop state ──
+let dotPopProgress=0; // 0~N, each integer = one dot fully popped
+
+// ── Easing functions ──
+function easeOutElastic(t){
+  if(t===0||t===1) return t;
+  return Math.pow(2,-10*t)*Math.sin((t-0.1)*5*Math.PI)+1;
+}
+function easeOutBack(t){
+  const c1=1.70158, c3=c1+1;
+  return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2);
+}
+function easeInOutCubic(t){return t<0.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}
+
+// ── Trail effect for moving line ──
+let trailPoints=[];
+const MAX_TRAIL=12;
+
+// ── Animation ──
+let animId=null, animStart=null, globalTime=0;
+let animTimeouts=[];
+const PHASE0_DUR=800;  // dots popping in
+const PHASE1_DUR=4000; // convergence (longer for drama)
+const PHASE1_PAUSE=800;
+const PHASE2_DUR=2500; // extension
+// phase: -1=dot intro, 0=idle, 1=converging, 2=extending
+
+function drawScene(ph,t){
+  ctx.save();
+  try{
+  // Apply screen shake
+  ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
+  if(shakeAmount>0.5){
+    const sx=(Math.random()-0.5)*shakeAmount*2;
+    const sy=(Math.random()-0.5)*shakeAmount*2;
+    ctx.translate(sx,sy);
+    shakeAmount*=shakeDecay;
+  }else{shakeAmount=0;}
+
+  ctx.clearRect(-10,-10,W+20,H+20);
+
+  // Animated background gradient pulse
+  if(ph===2 && t>0.9){
+    const pulseAlpha=Math.sin(globalTime*3)*0.03+0.03;
+    const grd=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,W*0.6);
+    grd.addColorStop(0,`rgba(239,68,68,${pulseAlpha})`);
+    grd.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=grd;ctx.fillRect(0,0,W,H);
+  }
+
+  // Grid with subtle animation
+  ctx.lineWidth=1;
   for(let y=TEMP_MIN;y<=TEMP_MAX;y+=0.5){
-    const py=yOf(y);ctx.beginPath();ctx.moveTo(PAD.left,py);ctx.lineTo(W-PAD.right,py);ctx.stroke();
+    const py=yOf(y);
+    const gridAlpha=y===15?0:0.1+Math.sin(globalTime+y)*0.02;
+    ctx.strokeStyle=`rgba(148,163,184,${gridAlpha})`;
+    ctx.beginPath();ctx.moveTo(PAD.left,py);ctx.lineTo(W-PAD.right,py);ctx.stroke();
   }
   for(let yr=2000;yr<=2070;yr+=10){
-    const px=xOf(yr);ctx.beginPath();ctx.moveTo(px,PAD.top);ctx.lineTo(px,H-PAD.bottom);ctx.stroke();
+    const px=xOf(yr);ctx.strokeStyle='rgba(148,163,184,.1)';
+    ctx.beginPath();ctx.moveTo(px,PAD.top);ctx.lineTo(px,H-PAD.bottom);ctx.stroke();
   }
 
-  // 15°C line
+  // 15°C line with animated dash offset
   const y15=yOf(15);
   ctx.strokeStyle='rgba(239,68,68,.5)';ctx.lineWidth=2;ctx.setLineDash([8,6]);
+  ctx.lineDashOffset=-(globalTime*30 % 14);
   ctx.beginPath();ctx.moveTo(PAD.left,y15);ctx.lineTo(W-PAD.right,y15);ctx.stroke();
-  ctx.setLineDash([]);
+  ctx.lineDashOffset=0;ctx.setLineDash([]);
   ctx.fillStyle='rgba(239,68,68,.8)';ctx.font="bold 13px 'Jua',sans-serif";
   ctx.textAlign='left';
   ctx.fillText('아열대 15°C',PAD.left+6,y15-8);
@@ -250,159 +461,460 @@ function drawScene(ph,t){
   ctx.textAlign='right';
   for(let tmp=TEMP_MIN;tmp<=TEMP_MAX;tmp+=1) ctx.fillText(tmp+'°C',PAD.left-12,yOf(tmp)+6);
 
-  // ── Determine current line a, b ──
+  // ── Determine current line a, b from gradient descent path ──
+  // ph=-1: dots only (no line, no errors)
+  // ph=0:  initial random line appearing (with errors)
+  // ph=1:  converging, ph=2: extending
   let curA,curB;
-  if(ph===0){
+  if(ph<0){
+    curA=initA; curB=initB; // computed but not drawn
+  }else if(ph===0){
     curA=initA; curB=initB;
   }else if(ph===1){
-    curA=lerp(initA,reg.a,t);
-    curB=lerp(initB,reg.b,t);
+    // Follow pre-computed gradient descent path
+    const pathIdx=t*(descentPath.length-1);
+    const idx=Math.floor(pathIdx);
+    const frac=pathIdx-idx;
+    if(idx>=descentPath.length-1){
+      curA=reg.a; curB=reg.b;
+    }else{
+      curA=lerp(descentPath[idx].a,descentPath[idx+1].a,frac);
+      curB=lerp(descentPath[idx].b,descentPath[idx+1].b,frac);
+    }
   }else{
     curA=reg.a; curB=reg.b;
   }
 
-  // ── Error bars (phase 0 and 1) ──
-  if(ph<=1){
+  // ── Error bars (phase 0 and 1, NOT phase -1) ──
+  if(ph===0&&t>0.5 || ph===1){
     for(let i=0;i<N;i++){
       const yr=RAW_YEARS[i], actual=RAW_TEMPS[i];
       const predicted=curA*yr+curB;
       const px=xOf(yr), pyActual=yOf(actual), pyPred=yOf(predicted);
-      // vertical error line
-      ctx.strokeStyle='rgba(239,68,68,.5)';ctx.lineWidth=1.5;
-      ctx.beginPath();ctx.moveTo(px,pyActual);ctx.lineTo(px,pyPred);ctx.stroke();
-      // small error square icon
       const errPx=Math.abs(pyActual-pyPred);
-      if(errPx>4){
-        const sz=Math.min(errPx,20);
-        const top=Math.min(pyActual,pyPred);
-        ctx.fillStyle='rgba(239,68,68,.08)';
-        ctx.strokeStyle='rgba(239,68,68,.25)';ctx.lineWidth=1;
-        ctx.fillRect(px-sz/2,top,sz,Math.abs(pyActual-pyPred));
-        ctx.strokeRect(px-sz/2,top,sz,Math.abs(pyActual-pyPred));
+
+      // Animated error line with glow
+      if(errPx>2){
+        // Glow
+        ctx.shadowColor='rgba(239,68,68,.4)';ctx.shadowBlur=ph===1?8*(1-t):4;
+        ctx.strokeStyle=`rgba(239,68,68,${0.3+0.4*(errPx/100)})`;ctx.lineWidth=2;
+        ctx.beginPath();ctx.moveTo(px,pyActual);ctx.lineTo(px,pyPred);ctx.stroke();
+        ctx.shadowColor='transparent';ctx.shadowBlur=0;
+
+        // Error area with breathing effect
+        if(errPx>4){
+          const breathe=1+Math.sin(globalTime*3+i)*0.05;
+          const sz=Math.min(errPx,20)*breathe;
+          const top=Math.min(pyActual,pyPred);
+          ctx.fillStyle=`rgba(239,68,68,${0.06+0.04*Math.sin(globalTime*2+i)})`;
+          ctx.strokeStyle='rgba(239,68,68,.25)';ctx.lineWidth=1;
+          ctx.fillRect(px-sz/2,top,sz,Math.abs(pyActual-pyPred));
+          ctx.strokeRect(px-sz/2,top,sz,Math.abs(pyActual-pyPred));
+        }
       }
     }
   }
 
-  // ── Data points (on top of error bars) ──
+  // ── Data points with pop animation + highlight ──
   for(let i=0;i<N;i++){
+    const dotT=Math.max(0,Math.min(1,(dotPopProgress-i)));
+    if(dotT<=0) continue;
+
+    const isHL=(highlightIdx===i);
+    const scale=easeOutElastic(dotT);
     const px=xOf(RAW_YEARS[i]),py=yOf(RAW_TEMPS[i]);
-    ctx.beginPath();ctx.arc(px,py,6,0,Math.PI*2);
-    ctx.fillStyle='#f59e0b';ctx.fill();
-    ctx.strokeStyle='rgba(0,0,0,.4)';ctx.lineWidth=2;ctx.stroke();
+    const baseR=isHL?9:6;
+    const r=baseR*scale;
+
+    // Glow ring (bigger for highlighted)
+    const glowR=r+(isHL?10:4)+Math.sin(globalTime*2+i*0.5)*2;
+    ctx.beginPath();ctx.arc(px,py,glowR,0,Math.PI*2);
+    ctx.fillStyle=isHL
+      ?`rgba(245,158,11,${0.25+0.1*Math.sin(globalTime*4)})`
+      :`rgba(245,158,11,${0.1+0.05*Math.sin(globalTime*3+i)})`;
+    ctx.fill();
+
+    // Highlight: outer pulsing ring
+    if(isHL){
+      const pulseR=r+14+Math.sin(globalTime*5)*4;
+      ctx.beginPath();ctx.arc(px,py,pulseR,0,Math.PI*2);
+      ctx.strokeStyle=`rgba(245,158,11,${0.4+0.2*Math.sin(globalTime*3)})`;
+      ctx.lineWidth=2;ctx.stroke();
+    }
+
+    // Main dot
+    ctx.beginPath();ctx.arc(px,py,r,0,Math.PI*2);
+    ctx.fillStyle=isHL?'#fbbf24':'#f59e0b';
+    if(isHL){ctx.shadowColor='rgba(245,158,11,.8)';ctx.shadowBlur=20;}
+    ctx.fill();
+    ctx.shadowColor='transparent';ctx.shadowBlur=0;
+    ctx.strokeStyle=isHL?'#fff':'rgba(0,0,0,.4)';ctx.lineWidth=isHL?3:2;ctx.stroke();
+
+    // (highlight labels drawn later, after the trend line)
+
+    // Sparkle on pop
+    if(dotT>0.5 && dotT<0.95){
+      const sparkleT=(dotT-0.5)/0.45;
+      const sparkR=r+15*sparkleT;
+      ctx.beginPath();ctx.arc(px,py,sparkR,0,Math.PI*2);
+      ctx.strokeStyle=`rgba(245,158,11,${0.6*(1-sparkleT)})`;ctx.lineWidth=2*(1-sparkleT);ctx.stroke();
+    }
   }
 
-  // ── Current line (data range only during phase 0,1) ──
-  if(ph<=1){
+  // ── Current line (phase 0: appearing, phase 1: converging) ──
+  if(ph===0||ph===1){
     const x1=YEAR_MIN, x2=2026;
+    const lineOpacity=ph===0?Math.min(t,1):1;
+
+    // Line glow
+    ctx.globalAlpha=lineOpacity;
+    ctx.shadowColor=`rgba(59,130,246,${0.6*lineOpacity})`;ctx.shadowBlur=ph===1?12+Math.sin(globalTime*4)*4:6;
     ctx.strokeStyle='#3b82f6';ctx.lineWidth=3;
     ctx.beginPath();ctx.moveTo(xOf(x1),yOf(curA*x1+curB));ctx.lineTo(xOf(x2),yOf(curA*x2+curB));ctx.stroke();
+    ctx.shadowColor='transparent';ctx.shadowBlur=0;
+
+    // Endpoint indicator (moving)
+    if(ph===1){
+      const endPx=xOf(x2), endPy=yOf(curA*x2+curB);
+      ctx.beginPath();ctx.arc(endPx,endPy,4+Math.sin(globalTime*5)*1.5,0,Math.PI*2);
+      ctx.fillStyle='rgba(59,130,246,.8)';ctx.fill();
+    }
+    ctx.globalAlpha=1;
   }
 
-  // ── Phase 2: extend trend line to 15°C ──
+  // ── Phase 2: extend trend line to 15°C with trail ──
   if(ph===2){
     const endYearFull=(15-reg.b)/reg.a;
-    const endYear=lerp(2026,endYearFull,t);
+    const endYear=lerp(2026,endYearFull,easeInOutCubic(t));
     const tStart=reg.a*YEAR_MIN+reg.b;
     const tEnd=reg.a*endYear+reg.b;
+    const headX=xOf(endYear), headY=yOf(tEnd);
 
+    // Store trail
+    if(t<1){
+      trailPoints.push({x:headX,y:headY,life:1});
+      if(trailPoints.length>MAX_TRAIL) trailPoints.shift();
+    }
+
+    // Draw trail
+    for(let i=0;i<trailPoints.length;i++){
+      const tp=trailPoints[i];
+      tp.life-=0.03;
+      if(tp.life>0){
+        ctx.beginPath();ctx.arc(tp.x,tp.y,3*tp.life,0,Math.PI*2);
+        ctx.fillStyle=`rgba(59,130,246,${tp.life*0.5})`;ctx.fill();
+      }
+    }
+    trailPoints=trailPoints.filter(p=>p.life>0);
+
+    // Main line with glow
+    ctx.shadowColor='rgba(59,130,246,.5)';ctx.shadowBlur=10;
     ctx.strokeStyle='#3b82f6';ctx.lineWidth=3;
-    ctx.beginPath();ctx.moveTo(xOf(YEAR_MIN),yOf(tStart));ctx.lineTo(xOf(endYear),yOf(tEnd));ctx.stroke();
+    ctx.beginPath();ctx.moveTo(xOf(YEAR_MIN),yOf(tStart));ctx.lineTo(headX,headY);ctx.stroke();
+    ctx.shadowColor='transparent';ctx.shadowBlur=0;
 
-    // moving dot
-    ctx.beginPath();ctx.arc(xOf(endYear),yOf(tEnd),5,0,Math.PI*2);
+    // Dashed future portion
+    if(endYear>2024){
+      ctx.strokeStyle='rgba(59,130,246,.3)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+      const splitX=xOf(2024), splitY=yOf(reg.a*2024+reg.b);
+      ctx.beginPath();ctx.moveTo(splitX,splitY);ctx.lineTo(headX,headY);ctx.stroke();
+      ctx.lineDashOffset=0;ctx.setLineDash([]);
+    }
+
+    // Moving dot with pulse
+    const dotPulse=3+Math.sin(globalTime*8)*2;
+    ctx.beginPath();ctx.arc(headX,headY,5+dotPulse,0,Math.PI*2);
+    ctx.fillStyle=`rgba(59,130,246,${0.15+Math.sin(globalTime*6)*0.05})`;ctx.fill();
+    ctx.beginPath();ctx.arc(headX,headY,5,0,Math.PI*2);
     ctx.fillStyle='#3b82f6';ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+
+    // Spawn particles as line extends
+    if(t<1 && Math.random()>0.6){
+      spawnParticles(headX,headY,'rgba(59,130,246,0.8)',1,1.5);
+    }
 
     if(t>=1){
-      // vertical dashed line at prediction
+      // Vertical dashed line at prediction with animation
       const predX=xOf(endYearFull);
       ctx.strokeStyle='rgba(239,68,68,.6)';ctx.lineWidth=2;ctx.setLineDash([6,4]);
+      ctx.lineDashOffset=-(globalTime*20 % 10);
       ctx.beginPath();ctx.moveTo(predX,yOf(15));ctx.lineTo(predX,H-PAD.bottom);ctx.stroke();
-      ctx.setLineDash([]);
-      // intersection dot
+      ctx.lineDashOffset=0;ctx.setLineDash([]);
+
+      // Intersection dot with pulsing glow
+      const glowSize=12+Math.sin(globalTime*3)*4;
+      ctx.beginPath();ctx.arc(predX,yOf(15),glowSize,0,Math.PI*2);
+      ctx.fillStyle=`rgba(239,68,68,${0.1+Math.sin(globalTime*2)*0.05})`;ctx.fill();
+
       ctx.beginPath();ctx.arc(predX,yOf(15),8,0,Math.PI*2);
+      ctx.shadowColor='rgba(239,68,68,.8)';ctx.shadowBlur=15;
       ctx.fillStyle='#ef4444';ctx.fill();
       ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
-      // year label
+      ctx.shadowColor='transparent';ctx.shadowBlur=0;
+
+      // Year label
       ctx.fillStyle='#ef4444';ctx.font="bold 14px 'Jua',sans-serif";ctx.textAlign='center';
       ctx.fillText(Math.round(endYearFull)+'년',predX,H-PAD.bottom+40);
     }
   }
 
+  // ── Highlighted point overlay (drawn AFTER line so it's never obscured) ──
+  if(highlightIdx>=0){
+    const hi=highlightIdx;
+    const dotT=Math.max(0,Math.min(1,(dotPopProgress-hi)));
+    if(dotT>0){
+      const px=xOf(RAW_YEARS[hi]),py=yOf(RAW_TEMPS[hi]);
+      const r=(highlightIdx===hi?9:6)*easeOutElastic(dotT);
+
+      // Re-draw highlighted dot on top of line
+      ctx.beginPath();ctx.arc(px,py,r,0,Math.PI*2);
+      ctx.shadowColor='rgba(245,158,11,.8)';ctx.shadowBlur=20;
+      ctx.fillStyle='#fbbf24';ctx.fill();
+      ctx.shadowColor='transparent';ctx.shadowBlur=0;
+      ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.stroke();
+
+      // Year & temp labels
+      ctx.fillStyle='#fbbf24';ctx.font="bold 14px 'Jua',sans-serif";ctx.textAlign='center';
+      ctx.fillText(`${RAW_YEARS[hi]}년`,px,py-r-14);
+      ctx.fillText(`${RAW_TEMPS[hi]}°C`,px,py-r-1);
+
+      // Error bar & value (only when trend line exists)
+      if(ph>=0){
+        const predicted=curA*RAW_YEARS[hi]+curB;
+        const err=RAW_TEMPS[hi]-predicted;
+        const pyPred=yOf(predicted);
+
+        // Error bar line
+        ctx.strokeStyle='rgba(239,68,68,.8)';ctx.lineWidth=2.5;
+        ctx.setLineDash([5,3]);
+        ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px,pyPred);ctx.stroke();
+        ctx.lineDashOffset=0;ctx.setLineDash([]);
+
+        // Predicted point marker on the line
+        ctx.beginPath();ctx.arc(px,pyPred,4,0,Math.PI*2);
+        ctx.fillStyle='rgba(59,130,246,.8)';ctx.fill();
+        ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+
+        // Error value label with background
+        const midY=(py+pyPred)/2;
+        const errText=`오차 ${err>=0?'+':''}${err.toFixed(2)}°C`;
+        ctx.font="bold 13px 'Jua',sans-serif";
+        ctx.textAlign='left';
+        const tw=ctx.measureText(errText).width;
+        ctx.fillStyle='rgba(0,0,0,.78)';
+        ctx.fillRect(px+10,midY-10,tw+12,20);
+        ctx.strokeStyle='rgba(239,68,68,.5)';ctx.lineWidth=1;
+        ctx.strokeRect(px+10,midY-10,tw+12,20);
+        ctx.fillStyle='#ef4444';
+        ctx.fillText(errText,px+16,midY+5);
+        ctx.textAlign='center';
+      }
+    }
+  }
+
+  // Draw particles on top
+  updateAndDrawParticles();
+
   // ── Overlay & SSE update ──
   const sse=calcSSE(curA,curB);
   const ov=document.getElementById('overlay');
-  if(ph===0){
+  if(ph<0){
+    // dots only, no line info
+  }else if(ph===0){
     ov.textContent=`초기 직선: y = ${curA.toFixed(4)}x + (${curB.toFixed(1)})  |  오차² 합 = ${sse.toFixed(2)}`;
     ov.style.color='#94a3b8';
   }else if(ph===1){
-    ov.textContent=`y = ${curA.toFixed(4)}x + (${curB.toFixed(2)})  |  오차² 합 = ${sse.toFixed(2)}`;
+    ov.textContent=`기울기 a=${curA.toFixed(5)}  절편 b=${curB.toFixed(2)}  |  SSE = ${sse.toFixed(2)}`;
     ov.style.color='#3b82f6';
     document.getElementById('sseText').textContent=sse.toFixed(2);
     document.getElementById('formulaText').textContent=`y = ${curA.toFixed(4)}·x + (${curB.toFixed(2)})`;
-  }else if(ph===2){
+  }else if(ph===2 && t<1){
     ov.textContent=`y = ${reg.a.toFixed(4)}x + (${reg.b.toFixed(2)})  — 15°C 도달 예측 중…`;
     ov.style.color='#3b82f6';
   }
+
+  // Update highlight error panel in real-time during animation
+  if(highlightIdx>=0 && ph>=0){
+    const yr=RAW_YEARS[highlightIdx], tmp=RAW_TEMPS[highlightIdx];
+    const pred=curA*yr+curB;
+    const err=tmp-pred;
+    document.getElementById('hlPointLabel').textContent=`${yr}년 — 실측 ${tmp}°C`;
+    document.getElementById('hlErrorValue').textContent=`오차: ${err>=0?'+':''}${err.toFixed(2)}°C`;
+    document.getElementById('hlErrorSub').textContent=`예측값 ${pred.toFixed(2)}°C | 오차² = ${(err*err).toFixed(3)}`;
+  }
+
+  }catch(e){console.error('drawScene error:',e);}
+  ctx.restore();
 }
 
-// ── Animation ──
-let animId=null, animStart=null;
-const PHASE1_DUR=3500; // convergence
-const PHASE1_PAUSE=600;
-const PHASE2_DUR=2000; // extension
+// ── Animation phases ──
+
+function animateDotIntro(ts){
+  if(!animStart) animStart=ts;
+  globalTime=ts/1000;
+  const raw=Math.min((ts-animStart)/PHASE0_DUR,1);
+  dotPopProgress=raw*N;
+  phase=-1;phaseT=0;
+  drawScene(-1,0);
+  if(raw<1){
+    animId=requestAnimationFrame(animateDotIntro);
+  }else{
+    dotPopProgress=N;
+    drawScene(-1,0);
+    // Small pause then show initial line — keep rendering
+    let goLine=false;
+    animTimeouts.push(setTimeout(()=>{goLine=true;},300));
+    function dotWait(ts2){
+      globalTime=ts2/1000;
+      drawScene(-1,0);
+      if(!goLine){
+        animId=requestAnimationFrame(dotWait);
+      }else{
+        animStart=null;
+        animId=requestAnimationFrame(animateLineAppear);
+      }
+    }
+    animId=requestAnimationFrame(dotWait);
+  }
+}
+
+// Phase 0.5: initial random line appears
+function animateLineAppear(ts){
+  if(!animStart) animStart=ts;
+  globalTime=ts/1000;
+  const raw=Math.min((ts-animStart)/600,1);
+  phaseT=easeOutBack(raw);
+  phase=0;
+  drawScene(0,phaseT);
+  if(raw<1){
+    animId=requestAnimationFrame(animateLineAppear);
+  }else{
+    // Pause then converge — keep rendering during pause
+    let goPhase1=false;
+    animTimeouts.push(setTimeout(()=>{goPhase1=true;},500));
+    function waitLoop(ts2){
+      globalTime=ts2/1000;
+      drawScene(0,0);
+      if(!goPhase1){
+        animId=requestAnimationFrame(waitLoop);
+      }else{
+        animStart=null;
+        animId=requestAnimationFrame(animatePhase1);
+      }
+    }
+    animId=requestAnimationFrame(waitLoop);
+  }
+}
 
 function animatePhase1(ts){
   if(!animStart) animStart=ts;
+  globalTime=ts/1000;
   const raw=Math.min((ts-animStart)/PHASE1_DUR,1);
-  phaseT=1-Math.pow(1-raw,3); // ease-out
+
+  // Use smooth time progression - the gradient descent path itself has the dynamics
+  phaseT=easeInOutCubic(raw);
   phase=1;
+
+  // Screen shake when line is moving fast (early in descent)
+  if(raw>0.05 && raw<0.5){
+    shakeAmount=Math.max(shakeAmount, 3*(1-raw*2));
+  }
+
   drawScene(phase,phaseT);
   if(raw<1){
     animId=requestAnimationFrame(animatePhase1);
   }else{
-    // pause then start phase 2
     phase=1;phaseT=1;
     drawScene(phase,phaseT);
     showConverged();
-    setTimeout(()=>{animStart=null;animId=requestAnimationFrame(animatePhase2);},PHASE1_PAUSE);
+    // Spawn celebration particles at each data point
+    for(let i=0;i<N;i++){
+      spawnParticles(xOf(RAW_YEARS[i]),yOf(RAW_TEMPS[i]),'#10b981',5,2);
+    }
+    shakeAmount=6;
+    // Keep rendering during pause, then transition to phase 2
+    let startPhase2=false;
+    animTimeouts.push(setTimeout(()=>{startPhase2=true;},PHASE1_PAUSE));
+    function pauseLoop(ts2){
+      globalTime=ts2/1000;
+      drawScene(phase,phaseT);
+      if(!startPhase2){
+        animId=requestAnimationFrame(pauseLoop);
+      }else{
+        animStart=null;trailPoints=[];
+        animId=requestAnimationFrame(animatePhase2);
+      }
+    }
+    animId=requestAnimationFrame(pauseLoop);
   }
 }
 
 function animatePhase2(ts){
   if(!animStart) animStart=ts;
+  globalTime=ts/1000;
   const raw=Math.min((ts-animStart)/PHASE2_DUR,1);
-  phaseT=1-Math.pow(1-raw,3);
+  phaseT=raw; // easing applied inside drawScene
   phase=2;
-  drawScene(phase,phaseT);
+  drawScene(phase,raw);
   if(raw<1){
     animId=requestAnimationFrame(animatePhase2);
   }else{
-    animId=null;
+    // Explosion at intersection!
+    const endYearFull=(15-reg.b)/reg.a;
+    const predX=xOf(endYearFull), predY=yOf(15);
+    spawnParticles(predX,predY,'#ef4444',40,5);
+    spawnParticles(predX,predY,'#f59e0b',20,3);
+    spawnParticles(predX,predY,'#fff',10,4);
+    shakeAmount=12;
+
+    // Continue rendering for particles
     showPrediction();
+    animId=requestAnimationFrame(animateIdle);
   }
+}
+
+// Idle animation loop — keeps pulsing glows alive after prediction
+function animateIdle(ts){
+  if(animId===null) return;
+  globalTime=ts/1000;
+  drawScene(phase,phaseT);
+  animId=requestAnimationFrame(animateIdle);
 }
 
 function startAnimation(){
   if(animId) return;
+  animTimeouts.forEach(tid=>clearTimeout(tid));animTimeouts=[];
   document.getElementById('btnStart').disabled=true;
   animStart=null;
-  phase=1;phaseT=0;
-  animId=requestAnimationFrame(animatePhase1);
+  dotPopProgress=0;
+  phase=-1;phaseT=0;
+  animId=requestAnimationFrame(animateDotIntro);
 }
 
 function showConverged(){
   const sse=calcSSE(reg.a,reg.b);
   document.getElementById('formulaText').textContent=`y = ${reg.a.toFixed(4)}·x + (${reg.b.toFixed(2)})`;
   document.getElementById('sseText').textContent=sse.toFixed(2);
-
 }
 
+let counterInterval=null;
 function showPrediction(){
   const predYear=(15-reg.b)/reg.a;
   const yr=Math.round(predYear);
-  document.getElementById('predictText').textContent=`${yr}년`;
+  // Rolling counter effect
+  const predEl=document.getElementById('predictText');
+  const badgeEl=document.getElementById('predYear');
+  let counter=2030;
+  if(counterInterval){clearInterval(counterInterval);}
+  counterInterval=setInterval(()=>{
+    counter+=Math.ceil((yr-counter)*0.15)||1;
+    if(counter>=yr){counter=yr;clearInterval(counterInterval);counterInterval=null;}
+    predEl.textContent=`${counter}년`;
+    badgeEl.textContent=`${counter}년`;
+  },40);
+
   document.getElementById('predictSub').textContent=`정확히 ${predYear.toFixed(1)}년 — 지금으로부터 약 ${yr-2026}년 후`;
-  document.getElementById('predYear').textContent=`${yr}년`;
   document.getElementById('predBadge').classList.add('visible');
 
   const ov=document.getElementById('overlay');
@@ -412,10 +924,16 @@ function showPrediction(){
 
 function resetAll(){
   if(animId){cancelAnimationFrame(animId);animId=null;}
-  phase=0;phaseT=0;animStart=null;
-  randomInit(); // 새로운 랜덤 초기 직선
+  animTimeouts.forEach(tid=>clearTimeout(tid));animTimeouts=[];
+  if(counterInterval){clearInterval(counterInterval);counterInterval=null;}
+  phase=-1;phaseT=0;animStart=null;
+  dotPopProgress=N; // show all dots immediately after reset
+  particles=[];trailPoints=[];shakeAmount=0;
+  setHighlight(-1);
+  randomInit();
+  computeDescentPath();
   document.getElementById('btnStart').disabled=false;
-  document.getElementById('overlay').textContent='랜덤 초기 직선 — ▶ 버튼을 누르세요';
+  document.getElementById('overlay').textContent='데이터 확인 후 ▶ 버튼을 누르세요';
   document.getElementById('overlay').style.color='#94a3b8';
   document.getElementById('formulaText').textContent='—';
   document.getElementById('sseText').textContent='—';
@@ -423,11 +941,13 @@ function resetAll(){
   document.getElementById('predictSub').textContent='';
   document.getElementById('predBadge').classList.remove('visible');
   document.getElementById('predYear').textContent='—';
-  drawScene(0,0);
+  drawScene(-1,0);
 }
 
 // ── Init ──
-setTimeout(()=>{resize();drawScene(0,0);},50);
+phase=-1;
+dotPopProgress=N; // show dots immediately on load
+setTimeout(()=>{resize();drawScene(-1,0);},50);
 </script>
 </body>
 </html>
