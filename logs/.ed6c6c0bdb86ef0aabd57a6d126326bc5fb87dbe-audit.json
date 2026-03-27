@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/Users/osmfirst/Library/CloudStorage/Dropbox/github/oh-research.github.io/logs/.ed6c6c0bdb86ef0aabd57a6d126326bc5fb87dbe-audit.json",
+    "files": [
+        {
+            "date": 1774626136708,
+            "name": "/Users/osmfirst/Library/CloudStorage/Dropbox/github/oh-research.github.io/logs/mcp-puppeteer-2026-03-28.log",
+            "hash": "da44efe4f2a27663fb709dbb1e0c7e154942753ee02e3226ec973374944e5a7c"
+        }
+    ],
+    "hashType": "sha256"
+}

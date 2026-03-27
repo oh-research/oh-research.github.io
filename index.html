@@ -206,6 +206,23 @@ a.step-link:hover li{
   box-shadow:0 18px 36px rgba(245,158,11,.3);
 }
 
+/* ── Slide buttons ── */
+.slide-btn{
+  width:32px;height:32px;
+  border:1px solid rgba(148,163,184,.25);
+  border-radius:8px;
+  background:rgba(15,23,42,.8);
+  color:var(--accent);
+  font-family:'Jua',sans-serif;
+  font-size:14px;
+  cursor:pointer;
+  transition:background .15s, border-color .15s;
+}
+.slide-btn:hover{
+  background:rgba(245,158,11,.18);
+  border-color:var(--accent);
+}
+
 @media (max-width: 860px){
   .page{width:min(100% - 24px, 720px);padding:18px 0 28px;}
   .hero{padding:26px 20px 24px;border-radius:24px;}
@@ -218,7 +235,17 @@ a.step-link:hover li{
   <main class="page">
     <section class="hero">
       <span class="eyebrow">과학영재교육원 · 직선과 추세선</span>
-      <h1>직선 탐험</h1>
+      <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
+        <h1 style="margin-bottom:0;">직선 탐험</h1>
+        <div class="slide-grid" style="position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:5px;">
+          <button class="slide-btn" onclick="openSlide(1)">1</button>
+          <button class="slide-btn" onclick="openSlide(2)">2</button>
+          <button class="slide-btn" onclick="openSlide(3)">3</button>
+          <button class="slide-btn" onclick="openSlide(4)">4</button>
+          <button class="slide-btn" onclick="openSlide(5)">5</button>
+          <button class="slide-btn" onclick="openSlide(6)">6</button>
+        </div>
+      </div>
     </section>
 
     <article class="card">
@@ -258,5 +285,31 @@ a.step-link:hover li{
       </div>
     </article>
   </main>
+<script>
+(function(){
+  // 비밀번호 해시 (SHA-256) — 아래 값은 "oh2025" 의 해시입니다. 변경하려면 교체하세요.
+  const HASH='e55d25df91c30dc9cfaa338ebfa65daccfc2b04dc9b5fde12de10c7838887b8f';
+  let unlocked=false;
+
+  async function sha256(msg){
+    const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(msg));
+    return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+
+  window.openSlide=async function(n){
+    if(!unlocked){
+      const pw=prompt('슬라이드 비밀번호를 입력하세요:');
+      if(!pw) return;
+      if(await sha256(pw)===HASH){
+        unlocked=true;
+      }else{
+        alert('비밀번호가 틀렸습니다.');
+        return;
+      }
+    }
+    window.open('./slides/'+n+'.pdf','_blank');
+  };
+})();
+</script>
 </body>
 </html>
