@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🇰🇷 한국 연평균 기온 — 15°C 예측</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0f172a;--panel:#1e293b;--accent:#f59e0b;--accent2:#3b82f6;
+  --accent3:#10b981;--danger:#ef4444;--text:#f1f5f9;--muted:#94a3b8;--border:#334155;
+}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;display:flex;flex-direction:column;}
+
+header{
+  display:flex;align-items:center;gap:12px;padding:12px 20px;
+  background:var(--panel);border-bottom:2px solid var(--border);flex-shrink:0;
+}
+header h1{font-family:'Jua',sans-serif;font-size:20px;color:var(--accent);}
+header span{font-size:14px;color:var(--muted);}
+
+.main{flex:1;display:flex;min-height:0;overflow:hidden;}
+
+/* Left info panel */
+.info-panel{
+  width:fit-content;min-width:280px;max-width:420px;flex-shrink:0;background:var(--panel);
+  border-right:1px solid var(--border);overflow-y:auto;padding:20px;
+  display:flex;flex-direction:column;gap:16px;
+}
+.info-panel h2{font-family:'Jua',sans-serif;font-size:16px;color:var(--accent2);
+  padding-bottom:8px;border-bottom:1px solid var(--border);}
+.data-table{width:100%;border-collapse:collapse;font-size:12px;}
+.data-table th,.data-table td{padding:5px 6px;text-align:center;border:1px solid var(--border);}
+.data-table th{background:rgba(59,130,246,.15);color:var(--accent2);font-weight:700;}
+.data-table td{color:var(--text);}
+
+.stat-box{
+  padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:12px;
+  text-align:center;
+}
+.stat-label{font-family:'Jua',sans-serif;font-size:13px;color:var(--muted);margin-bottom:4px;}
+.stat-value{font-family:'Jua',sans-serif;font-size:28px;color:var(--accent);}
+.stat-sub{font-size:12px;color:var(--muted);margin-top:4px;}
+
+.btn{
+  font-family:'Jua',sans-serif;font-size:16px;padding:12px 24px;
+  border:none;border-radius:12px;cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-primary{background:var(--accent);color:#000;}
+.btn-primary:hover{background:#fbbf24;transform:translateY(-1px);}
+.btn-reset{background:var(--panel);color:var(--muted);border:1px solid var(--border);}
+.btn-reset:hover{color:var(--text);border-color:var(--muted);}
+
+.btn-row{display:flex;gap:8px;}
+
+/* Canvas area */
+.canvas-wrap{flex:1;position:relative;min-width:0;}
+canvas{display:block;position:absolute;top:0;left:0;}
+
+.overlay{
+  position:absolute;top:14px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.78);padding:8px 20px;border-radius:12px;
+  font-family:'Jua',sans-serif;font-size:18px;color:var(--accent2);
+  pointer-events:none;white-space:nowrap;z-index:2;
+}
+
+.prediction-badge{
+  position:absolute;bottom:20px;right:20px;
+  background:rgba(239,68,68,.9);padding:14px 22px;border-radius:16px;
+  font-family:'Jua',sans-serif;text-align:center;z-index:2;
+  box-shadow:0 8px 30px rgba(239,68,68,.4);
+  opacity:0;transition:opacity .6s;
+}
+.prediction-badge.visible{opacity:1;}
+.prediction-badge .label{font-size:13px;color:rgba(255,255,255,.8);}
+.prediction-badge .year{font-size:36px;color:#fff;line-height:1.1;}
+.prediction-badge .note{font-size:12px;color:rgba(255,255,255,.7);margin-top:4px;}
+
+@media(max-width:800px){
+  .main{flex-direction:column;}
+  .info-panel{width:100%;max-height:40vh;flex-shrink:0;}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>🇰🇷 한국 연평균 기온</h1>
+  <span>추세선으로 아열대(15°C) 도달 연도 예측</span>
+</header>
+
+<div class="main">
+  <aside class="info-panel">
+    <div>
+      <h2>📊 데이터 (2년 간격, 13개)</h2>
+      <table class="data-table" id="dataTable"></table>
+    </div>
+
+    <div>
+      <h2>📐 추세선 정보</h2>
+      <div class="stat-box" id="formulaBox">
+        <div class="stat-label">추세선</div>
+        <div class="stat-value" id="formulaText" style="font-size:18px;">—</div>
+      </div>
+      <div class="stat-box" style="margin-top:8px;">
+        <div class="stat-label">오차² 합</div>
+        <div class="stat-value" id="sseText" style="font-size:22px;">—</div>
+      </div>
+    </div>
+
+    <div>
+      <h2>🔥 15°C 예측</h2>
+      <div class="stat-box" id="predictBox">
+        <div class="stat-label">아열대 기준 15°C 도달</div>
+        <div class="stat-value" id="predictText">—</div>
+        <div class="stat-sub" id="predictSub"></div>
+      </div>
+    </div>
+
+    <div class="btn-row" style="display:flex;gap:8px;">
+      <button class="btn btn-primary" id="btnStart" onclick="startAnimation()" style="flex:1;white-space:nowrap;">▶ 추세선 애니메이션</button>
+      <button class="btn btn-reset" onclick="resetAll()" style="flex:0 0 auto;white-space:nowrap;">↺ 초기화</button>
+    </div>
+  </aside>
+
+  <div class="canvas-wrap" id="canvasWrap">
+    <canvas id="chart"></canvas>
+    <div class="overlay" id="overlay">데이터 로딩 완료 — ▶ 버튼을 누르세요</div>
+    <div class="prediction-badge" id="predBadge">
+      <div class="label">아열대 15°C 도달 예측</div>
+      <div class="year" id="predYear">—</div>
+      <div class="note">선형 추세선 기준</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Data ──
+const RAW_YEARS=[2000,2002,2004,2006,2008,2010,2012,2014,2016,2018,2020,2022,2024];
+const RAW_TEMPS=[11.9,11.9,12.4,12.4,12.3,11.7,11.6,12.6,13.0,12.2,12.6,12.4,14.0];
+const N=RAW_YEARS.length;
+const MEAN_TEMP=RAW_TEMPS.reduce((s,v)=>s+v,0)/N;
+const MEAN_YEAR=RAW_YEARS.reduce((s,v)=>s+v,0)/N;
+
+// ── Linear regression ──
+function linReg(xs,ys){
+  const n=xs.length;
+  let sx=0,sy=0,sxy=0,sx2=0;
+  for(let i=0;i<n;i++){sx+=xs[i];sy+=ys[i];sxy+=xs[i]*ys[i];sx2+=xs[i]*xs[i];}
+  const a=(n*sxy-sx*sy)/(n*sx2-sx*sx);
+  const b=(sy-a*sx)/n;
+  const yMean=sy/n;
+  let ssTot=0,ssRes=0;
+  for(let i=0;i<n;i++){ssTot+=(ys[i]-yMean)**2;ssRes+=(ys[i]-(a*xs[i]+b))**2;}
+  const r2=1-ssRes/ssTot;
+  return {a,b,r2};
+}
+const reg=linReg(RAW_YEARS,RAW_TEMPS);
+
+// SSE for given a,b
+function calcSSE(a,b){
+  let s=0;
+  for(let i=0;i<N;i++){const e=RAW_TEMPS[i]-(a*RAW_YEARS[i]+b);s+=e*e;}
+  return s;
+}
+
+// ── Random initial line ──
+let initA, initB;
+function randomInit(){
+  // random slope: -0.08 ~ +0.12 (wide range around true ~0.04)
+  initA=(Math.random()*0.20-0.08);
+  // random intercept that keeps line in visible range around data
+  // at mean year, temp should be roughly 10~15
+  const tempAtMean=10+Math.random()*5;
+  initB=tempAtMean-initA*MEAN_YEAR;
+}
+randomInit();
+
+// ── Build data table ──
+(function(){
+  const t=document.getElementById('dataTable');
+  let h='<tr><th>연도</th><th>°C</th></tr>';
+  for(let i=0;i<N;i++) h+=`<tr><td>'${String(RAW_YEARS[i]).slice(2)}</td><td>${RAW_TEMPS[i]}</td></tr>`;
+  t.innerHTML=h;
+})();
+
+// ── Canvas setup ──
+const canvas=document.getElementById('chart');
+const ctx=canvas.getContext('2d');
+const wrap=document.getElementById('canvasWrap');
+let W,H;
+
+function resize(){
+  const r=devicePixelRatio||1;
+  W=wrap.clientWidth;H=wrap.clientHeight;
+  canvas.width=W*r;canvas.height=H*r;
+  canvas.style.width=W+'px';canvas.style.height=H+'px';
+  ctx.setTransform(r,0,0,r,0,0);
+  drawScene(phase,phaseT);
+}
+window.addEventListener('resize',resize);
+
+// ── Chart params ──
+const PAD={top:50,right:40,bottom:80,left:90};
+const YEAR_MIN=1998, YEAR_MAX=2070;
+const TEMP_MIN=10, TEMP_MAX=16;
+
+function xOf(year){return PAD.left+(year-YEAR_MIN)/(YEAR_MAX-YEAR_MIN)*(W-PAD.left-PAD.right);}
+function yOf(temp){return PAD.top+(TEMP_MAX-temp)/(TEMP_MAX-TEMP_MIN)*(H-PAD.top-PAD.bottom);}
+
+// ── Lerp helper ──
+function lerp(from,to,t){return from+(to-from)*t;}
+
+// ── Drawing ──
+// phase 0 = idle (show initial line), 1 = converging, 2 = extending to 15°C
+let phase=0, phaseT=0;
+
+function drawScene(ph,t){
+  ctx.clearRect(0,0,W,H);
+
+  // Grid
+  ctx.strokeStyle='rgba(148,163,184,.1)';ctx.lineWidth=1;
+  for(let y=TEMP_MIN;y<=TEMP_MAX;y+=0.5){
+    const py=yOf(y);ctx.beginPath();ctx.moveTo(PAD.left,py);ctx.lineTo(W-PAD.right,py);ctx.stroke();
+  }
+  for(let yr=2000;yr<=2070;yr+=10){
+    const px=xOf(yr);ctx.beginPath();ctx.moveTo(px,PAD.top);ctx.lineTo(px,H-PAD.bottom);ctx.stroke();
+  }
+
+  // 15°C line
+  const y15=yOf(15);
+  ctx.strokeStyle='rgba(239,68,68,.5)';ctx.lineWidth=2;ctx.setLineDash([8,6]);
+  ctx.beginPath();ctx.moveTo(PAD.left,y15);ctx.lineTo(W-PAD.right,y15);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='rgba(239,68,68,.8)';ctx.font="bold 13px 'Jua',sans-serif";
+  ctx.textAlign='left';
+  ctx.fillText('아열대 15°C',PAD.left+6,y15-8);
+
+  // Axes
+  ctx.strokeStyle='#94a3b8';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(PAD.left,PAD.top);ctx.lineTo(PAD.left,H-PAD.bottom);
+  ctx.lineTo(W-PAD.right,H-PAD.bottom);ctx.stroke();
+
+  // Axis labels
+  ctx.fillStyle='#94a3b8';ctx.font="bold 20px 'Jua',sans-serif";ctx.textAlign='center';
+  for(let yr=2000;yr<=2070;yr+=10) ctx.fillText(yr,xOf(yr),H-PAD.bottom+30);
+  ctx.textAlign='right';
+  for(let tmp=TEMP_MIN;tmp<=TEMP_MAX;tmp+=1) ctx.fillText(tmp+'°C',PAD.left-12,yOf(tmp)+6);
+
+  // ── Determine current line a, b ──
+  let curA,curB;
+  if(ph===0){
+    curA=initA; curB=initB;
+  }else if(ph===1){
+    curA=lerp(initA,reg.a,t);
+    curB=lerp(initB,reg.b,t);
+  }else{
+    curA=reg.a; curB=reg.b;
+  }
+
+  // ── Error bars (phase 0 and 1) ──
+  if(ph<=1){
+    for(let i=0;i<N;i++){
+      const yr=RAW_YEARS[i], actual=RAW_TEMPS[i];
+      const predicted=curA*yr+curB;
+      const px=xOf(yr), pyActual=yOf(actual), pyPred=yOf(predicted);
+      // vertical error line
+      ctx.strokeStyle='rgba(239,68,68,.5)';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(px,pyActual);ctx.lineTo(px,pyPred);ctx.stroke();
+      // small error square icon
+      const errPx=Math.abs(pyActual-pyPred);
+      if(errPx>4){
+        const sz=Math.min(errPx,20);
+        const top=Math.min(pyActual,pyPred);
+        ctx.fillStyle='rgba(239,68,68,.08)';
+        ctx.strokeStyle='rgba(239,68,68,.25)';ctx.lineWidth=1;
+        ctx.fillRect(px-sz/2,top,sz,Math.abs(pyActual-pyPred));
+        ctx.strokeRect(px-sz/2,top,sz,Math.abs(pyActual-pyPred));
+      }
+    }
+  }
+
+  // ── Data points (on top of error bars) ──
+  for(let i=0;i<N;i++){
+    const px=xOf(RAW_YEARS[i]),py=yOf(RAW_TEMPS[i]);
+    ctx.beginPath();ctx.arc(px,py,6,0,Math.PI*2);
+    ctx.fillStyle='#f59e0b';ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,.4)';ctx.lineWidth=2;ctx.stroke();
+  }
+
+  // ── Current line (data range only during phase 0,1) ──
+  if(ph<=1){
+    const x1=YEAR_MIN, x2=2026;
+    ctx.strokeStyle='#3b82f6';ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(xOf(x1),yOf(curA*x1+curB));ctx.lineTo(xOf(x2),yOf(curA*x2+curB));ctx.stroke();
+  }
+
+  // ── Phase 2: extend trend line to 15°C ──
+  if(ph===2){
+    const endYearFull=(15-reg.b)/reg.a;
+    const endYear=lerp(2026,endYearFull,t);
+    const tStart=reg.a*YEAR_MIN+reg.b;
+    const tEnd=reg.a*endYear+reg.b;
+
+    ctx.strokeStyle='#3b82f6';ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(xOf(YEAR_MIN),yOf(tStart));ctx.lineTo(xOf(endYear),yOf(tEnd));ctx.stroke();
+
+    // moving dot
+    ctx.beginPath();ctx.arc(xOf(endYear),yOf(tEnd),5,0,Math.PI*2);
+    ctx.fillStyle='#3b82f6';ctx.fill();
+
+    if(t>=1){
+      // vertical dashed line at prediction
+      const predX=xOf(endYearFull);
+      ctx.strokeStyle='rgba(239,68,68,.6)';ctx.lineWidth=2;ctx.setLineDash([6,4]);
+      ctx.beginPath();ctx.moveTo(predX,yOf(15));ctx.lineTo(predX,H-PAD.bottom);ctx.stroke();
+      ctx.setLineDash([]);
+      // intersection dot
+      ctx.beginPath();ctx.arc(predX,yOf(15),8,0,Math.PI*2);
+      ctx.fillStyle='#ef4444';ctx.fill();
+      ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+      // year label
+      ctx.fillStyle='#ef4444';ctx.font="bold 14px 'Jua',sans-serif";ctx.textAlign='center';
+      ctx.fillText(Math.round(endYearFull)+'년',predX,H-PAD.bottom+40);
+    }
+  }
+
+  // ── Overlay & SSE update ──
+  const sse=calcSSE(curA,curB);
+  const ov=document.getElementById('overlay');
+  if(ph===0){
+    ov.textContent=`초기 직선: y = ${curA.toFixed(4)}x + (${curB.toFixed(1)})  |  오차² 합 = ${sse.toFixed(2)}`;
+    ov.style.color='#94a3b8';
+  }else if(ph===1){
+    ov.textContent=`y = ${curA.toFixed(4)}x + (${curB.toFixed(2)})  |  오차² 합 = ${sse.toFixed(2)}`;
+    ov.style.color='#3b82f6';
+    document.getElementById('sseText').textContent=sse.toFixed(2);
+    document.getElementById('formulaText').textContent=`y = ${curA.toFixed(4)}·x + (${curB.toFixed(2)})`;
+  }else if(ph===2){
+    ov.textContent=`y = ${reg.a.toFixed(4)}x + (${reg.b.toFixed(2)})  — 15°C 도달 예측 중…`;
+    ov.style.color='#3b82f6';
+  }
+}
+
+// ── Animation ──
+let animId=null, animStart=null;
+const PHASE1_DUR=3500; // convergence
+const PHASE1_PAUSE=600;
+const PHASE2_DUR=2000; // extension
+
+function animatePhase1(ts){
+  if(!animStart) animStart=ts;
+  const raw=Math.min((ts-animStart)/PHASE1_DUR,1);
+  phaseT=1-Math.pow(1-raw,3); // ease-out
+  phase=1;
+  drawScene(phase,phaseT);
+  if(raw<1){
+    animId=requestAnimationFrame(animatePhase1);
+  }else{
+    // pause then start phase 2
+    phase=1;phaseT=1;
+    drawScene(phase,phaseT);
+    showConverged();
+    setTimeout(()=>{animStart=null;animId=requestAnimationFrame(animatePhase2);},PHASE1_PAUSE);
+  }
+}
+
+function animatePhase2(ts){
+  if(!animStart) animStart=ts;
+  const raw=Math.min((ts-animStart)/PHASE2_DUR,1);
+  phaseT=1-Math.pow(1-raw,3);
+  phase=2;
+  drawScene(phase,phaseT);
+  if(raw<1){
+    animId=requestAnimationFrame(animatePhase2);
+  }else{
+    animId=null;
+    showPrediction();
+  }
+}
+
+function startAnimation(){
+  if(animId) return;
+  document.getElementById('btnStart').disabled=true;
+  animStart=null;
+  phase=1;phaseT=0;
+  animId=requestAnimationFrame(animatePhase1);
+}
+
+function showConverged(){
+  const sse=calcSSE(reg.a,reg.b);
+  document.getElementById('formulaText').textContent=`y = ${reg.a.toFixed(4)}·x + (${reg.b.toFixed(2)})`;
+  document.getElementById('sseText').textContent=sse.toFixed(2);
+
+}
+
+function showPrediction(){
+  const predYear=(15-reg.b)/reg.a;
+  const yr=Math.round(predYear);
+  document.getElementById('predictText').textContent=`${yr}년`;
+  document.getElementById('predictSub').textContent=`정확히 ${predYear.toFixed(1)}년 — 지금으로부터 약 ${yr-2026}년 후`;
+  document.getElementById('predYear').textContent=`${yr}년`;
+  document.getElementById('predBadge').classList.add('visible');
+
+  const ov=document.getElementById('overlay');
+  ov.textContent=`추세선: y = ${reg.a.toFixed(4)}x + (${reg.b.toFixed(2)})  →  ${yr}년에 15°C`;
+  ov.style.color='#ef4444';
+}
+
+function resetAll(){
+  if(animId){cancelAnimationFrame(animId);animId=null;}
+  phase=0;phaseT=0;animStart=null;
+  randomInit(); // 새로운 랜덤 초기 직선
+  document.getElementById('btnStart').disabled=false;
+  document.getElementById('overlay').textContent='랜덤 초기 직선 — ▶ 버튼을 누르세요';
+  document.getElementById('overlay').style.color='#94a3b8';
+  document.getElementById('formulaText').textContent='—';
+  document.getElementById('sseText').textContent='—';
+  document.getElementById('predictText').textContent='—';
+  document.getElementById('predictSub').textContent='';
+  document.getElementById('predBadge').classList.remove('visible');
+  document.getElementById('predYear').textContent='—';
+  drawScene(0,0);
+}
+
+// ── Init ──
+setTimeout(()=>{resize();drawScene(0,0);},50);
+</script>
+</body>
+</html>

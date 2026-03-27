@@ -235,15 +235,17 @@ a.step-link:hover li{
   <main class="page">
     <section class="hero">
       <span class="eyebrow">과학영재교육원 · 직선과 추세선</span>
-      <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;">
         <h1 style="margin-bottom:0;">직선 탐험</h1>
-        <div class="slide-grid" style="position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:5px;">
+        <div class="slide-grid" style="position:relative;z-index:1;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,1fr);gap:5px;">
           <button class="slide-btn" onclick="openSlide(1)">1</button>
           <button class="slide-btn" onclick="openSlide(2)">2</button>
           <button class="slide-btn" onclick="openSlide(3)">3</button>
+          <button class="slide-btn" onclick="openSlide('intro')" title="소개 슬라이드">i</button>
           <button class="slide-btn" onclick="openSlide(4)">4</button>
           <button class="slide-btn" onclick="openSlide(5)">5</button>
           <button class="slide-btn" onclick="openSlide(6)">6</button>
+          <a href="./predict_korea_degree.html" class="slide-btn" style="display:grid;place-items:center;text-decoration:none;font-size:18px;line-height:1;" title="한국 기온 15°C 예측">☯</a>
         </div>
       </div>
     </section>
