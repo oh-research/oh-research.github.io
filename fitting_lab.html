@@ -1,0 +1,2264 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>직선 탐험</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0f172a;--panel:#1e293b;--accent:#f59e0b;--accent2:#3b82f6;
+  --accent3:#10b981;--danger:#ef4444;--text:#f1f5f9;--muted:#94a3b8;--border:#334155;
+}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;
+  height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+/* ── Tab Bar ── */
+.tab-bar{display:flex;align-items:center;gap:6px;padding:10px 16px;background:var(--bg);border-bottom:2px solid var(--border);flex-shrink:0;}
+.tab-bar-title{font-family:'Jua',sans-serif;font-size:17px;color:var(--accent);margin-right:10px;white-space:nowrap;}
+.tab-btn{font-family:'Jua',sans-serif;font-size:17px;padding:10px 28px;border:2px solid var(--border);border-radius:10px;cursor:pointer;background:var(--panel);color:var(--muted);transition:all .2s;}
+.tab-btn.active{background:var(--accent);color:#000;border-color:var(--accent);}
+.tab-btn:hover:not(.active){background:#293548;color:var(--text);}
+
+/* ── Shared: both layout containers live here ── */
+.all-content{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden;}
+
+/* ════════════════════════════════
+   LAYOUT A  (tabs 1-3, from file3)
+   ════════════════════════════════ */
+.layout-13{flex:1;display:flex;min-height:0;overflow:hidden;height:100%;}
+.layout-13.hidden{display:none;}
+
+/* ── Left Panel (13) ── */
+.left-panel-13{
+  width:300px;flex-shrink:0;background:var(--panel);
+  border-right:1px solid var(--border);
+  overflow-y:auto;padding:16px;
+}
+.panel-section-title{
+  font-family:'Jua',sans-serif;font-size:15px;color:var(--accent2);
+  margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);
+}
+
+/* ── Tab panel visibility (13) ── */
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* ── Graph Area (13) ── */
+.graph-area{flex:1;display:flex;flex-direction:column;min-width:0;}
+.graph-canvas-wrap{flex:1 1 0%;position:relative;min-height:200px;overflow:hidden;}
+#canvas13{display:block;position:absolute;top:0;left:0;}
+.formula-overlay{
+  position:absolute;top:12px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.75);padding:7px 18px;border-radius:10px;
+  font-family:'Jua',sans-serif;font-size:20px;color:var(--accent2);
+  pointer-events:none;white-space:nowrap;letter-spacing:.5px;
+}
+
+/* ── Calculation Area (13) ── */
+.calc-area{
+  background:rgba(15,23,42,.95);border-top:2px solid var(--border);
+  overflow-y:auto;max-height:230px;padding:12px 16px;flex-shrink:0;
+}
+.calc-area.hidden{display:none;}
+
+/* ── Tab 1 target ── */
+.t1-target-box{
+  text-align:center;padding:14px;margin-bottom:16px;
+  background:var(--bg);border:2px solid var(--accent);border-radius:12px;
+}
+.t1-target-label{font-family:'Jua',sans-serif;font-size:13px;color:var(--accent);margin-bottom:4px;}
+.t1-target-coord{font-family:'Jua',sans-serif;font-size:32px;color:var(--text);}
+.t1-distance-box{
+  text-align:center;padding:10px;margin-top:8px;margin-bottom:8px;
+  background:var(--bg);border:1px solid var(--border);border-radius:10px;
+  transition:border-color .2s;
+}
+.t1-distance-box.close{border-color:var(--accent3);}
+.t1-dist-label{font-size:12px;color:var(--muted);margin-bottom:2px;}
+.t1-dist-value{font-family:'Jua',sans-serif;font-size:28px;transition:color .2s;}
+.t1-success{
+  text-align:center;padding:12px;margin-top:8px;margin-bottom:8px;
+  background:rgba(16,185,129,.15);border:2px solid var(--accent3);border-radius:10px;
+  font-family:'Jua',sans-serif;font-size:16px;color:var(--accent3);
+  animation:fadeUp .35s ease-out;
+}
+.t1-score{
+  margin-top:14px;text-align:center;
+  font-family:'Jua',sans-serif;font-size:14px;color:var(--muted);
+}
+
+/* ── Sliders ── */
+.slider-section{margin-bottom:20px;}
+.slider-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.slider-name{font-family:'Jua',sans-serif;font-size:16px;color:var(--accent);}
+.slider-value{font-family:'Jua',sans-serif;font-size:24px;color:var(--text);min-width:55px;text-align:right;}
+input[type=range]{width:100%;accent-color:var(--accent2);cursor:pointer;height:6px;}
+.slider-desc{font-size:12px;color:var(--muted);margin-top:5px;}
+
+/* ── Info card ── */
+.info-card{
+  background:var(--bg);border:1px solid var(--border);border-radius:8px;
+  padding:12px;margin-top:14px;font-size:13px;line-height:1.8;
+}
+.info-card-title{font-family:'Jua',sans-serif;font-size:13px;color:var(--accent);margin-bottom:6px;}
+.info-item{display:flex;gap:8px;align-items:flex-start;margin-bottom:3px;}
+.info-arrow{color:var(--accent2);flex-shrink:0;font-weight:700;}
+
+/* ── Point inputs (13) ── */
+.point-group{
+  background:var(--bg);border-radius:8px;padding:10px 12px;
+  margin-bottom:10px;border:1px solid var(--border);
+}
+.point-group-title{font-family:'Jua',sans-serif;font-size:18px;margin-bottom:10px;}
+.point-inputs{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.point-inputs label{font-family:'Jua',sans-serif;font-size:17px;color:var(--accent2);}
+.point-input{
+  width:68px;padding:8px 10px;border:1px solid var(--border);border-radius:6px;
+  background:var(--bg);color:var(--text);font-family:'Jua',sans-serif;font-size:20px;text-align:center;
+  font-variant-numeric:tabular-nums;
+}
+.point-input:focus{outline:none;border-color:var(--accent2);}
+
+/* ── Buttons (13) ── */
+.btn-calc{
+  width:100%;padding:12px;margin-top:10px;
+  font-family:'Jua',sans-serif;font-size:17px;
+  background:var(--accent);color:#000;border:none;border-radius:8px;cursor:pointer;
+  transition:background .15s;
+}
+.btn-calc:hover{background:#d97706;}
+.combo-row{display:flex;gap:8px;margin-top:8px;}
+.btn-combo{
+  flex:1;padding:10px;font-family:'Jua',sans-serif;font-size:16px;
+  background:var(--bg);color:var(--muted);border:2px solid var(--border);
+  border-radius:8px;cursor:pointer;transition:all .15s;
+}
+.btn-combo:hover{border-color:var(--accent2);color:var(--text);}
+.btn-combo.active{background:var(--accent2);border-color:var(--accent2);color:#fff;}
+
+/* ── Preset buttons ── */
+.preset-label{font-size:12px;color:var(--muted);margin-top:14px;margin-bottom:6px;}
+.preset-btns{display:flex;flex-direction:column;gap:5px;}
+.preset-btn{
+  padding:8px 12px;background:var(--bg);border:1px solid var(--border);
+  border-radius:6px;color:var(--text);font-size:12px;cursor:pointer;
+  text-align:left;transition:border-color .15s;
+}
+.preset-btn:hover{border-color:var(--accent);}
+
+/* ── Calculation display (13) ── */
+.calc-step{
+  margin-bottom:10px;padding:11px 14px;background:var(--panel);
+  border-radius:8px;border-left:3px solid var(--accent2);
+  animation:fadeUp .35s ease-out;
+}
+.calc-step.final{border-left-color:var(--accent3);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.step-header{font-family:'Jua',sans-serif;font-size:14px;color:var(--accent);margin-bottom:7px;}
+.step-header.green{color:var(--accent3);}
+.calc-line{
+  font-size:14px;color:var(--text);padding:2px 0;
+  font-variant-numeric:tabular-nums;line-height:1.65;
+}
+.calc-line.hl{font-family:'Jua',sans-serif;font-size:17px;color:var(--accent3);margin-top:3px;}
+.calc-final{
+  font-family:'Jua',sans-serif;font-size:22px;color:var(--accent2);
+  text-align:center;padding:6px 0 2px;
+}
+
+/* ── Result table (13) ── */
+.result-wrap{margin-top:10px;animation:fadeUp .35s ease-out;}
+.result-table{width:100%;border-collapse:collapse;font-size:13px;}
+.result-table th{
+  background:var(--border);color:var(--muted);padding:7px 10px;
+  text-align:center;font-size:12px;
+}
+.result-table td{
+  padding:7px 10px;text-align:center;border-bottom:1px solid var(--border);
+  font-variant-numeric:tabular-nums;color:var(--muted);
+}
+.result-table tr.done td{color:var(--text);}
+.result-table .fml{font-family:'Jua',sans-serif;color:var(--accent2);}
+.success-msg{
+  background:rgba(16,185,129,.15);border:1px solid var(--accent3);border-radius:8px;
+  padding:12px 16px;text-align:center;font-family:'Jua',sans-serif;
+  font-size:16px;color:var(--accent3);margin-top:10px;animation:fadeUp .35s ease-out;
+}
+.warn-msg{
+  background:rgba(245,158,11,.12);border:1px solid var(--accent);border-radius:8px;
+  padding:10px 14px;text-align:center;font-family:'Jua',sans-serif;
+  font-size:14px;color:var(--accent);margin-top:10px;animation:fadeUp .35s ease-out;
+}
+.error-inline{
+  background:rgba(239,68,68,.12);border:1px solid var(--danger);border-radius:8px;
+  padding:10px 12px;font-size:13px;color:var(--danger);margin-top:8px;
+}
+
+/* ════════════════════════════════
+   LAYOUT B  (tabs 4-5, from file4)
+   ════════════════════════════════ */
+.layout-45{flex:1;display:flex;overflow:hidden;height:100%;}
+.layout-45.hidden{display:none;}
+
+/* ── LEFT PANEL (45) ── */
+.left-panel-45{width:300px;min-width:280px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0;}
+.panel-header{padding:12px 16px;background:rgba(0,0,0,.25);font-family:'Jua',sans-serif;font-size:15px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.panel-body{padding:14px;flex:1;}
+
+/* Point display */
+.point-display{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.point-badge{background:var(--bg);border:2px solid var(--border);border-radius:10px;padding:10px 14px;text-align:center;flex:1;min-width:70px;}
+.point-badge .label{font-family:'Jua',sans-serif;font-size:22px;color:var(--accent);}
+.point-badge .coord{font-family:'Jua',sans-serif;font-size:16px;color:var(--text);margin-top:4px;}
+
+/* Point input (45) */
+.point-input-group{margin-bottom:14px;}
+.point-input-group label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px;}
+.point-input-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+.point-input-row .pt-label{font-family:'Jua',sans-serif;font-size:20px;color:var(--accent);min-width:26px;}
+.point-input-row input{width:68px;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-family:'Jua',sans-serif;font-size:20px;text-align:center;font-variant-numeric:tabular-nums;}
+.point-input-row input:focus{outline:none;border-color:var(--accent);}
+.point-input-row span{color:var(--accent2);font-family:'Jua',sans-serif;font-size:17px;}
+
+/* Combo buttons (45) */
+.combo-section{margin-bottom:16px;}
+.combo-section .section-title{font-size:13px;color:var(--muted);margin-bottom:8px;}
+.combo-btn{width:100%;padding:12px;font-family:'Jua',sans-serif;font-size:16px;border:2px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);cursor:pointer;margin-bottom:8px;transition:all .15s;text-align:left;}
+.combo-btn:hover{border-color:var(--accent2);background:#162033;}
+.combo-btn.active{border-color:var(--accent2);background:rgba(59,130,246,.15);color:var(--accent2);}
+
+/* Anim controls */
+.anim-controls{display:flex;flex-direction:column;gap:10px;}
+.anim-btn{width:100%;padding:14px;font-family:'Jua',sans-serif;font-size:18px;border:none;border-radius:10px;cursor:pointer;transition:all .15s;}
+.anim-btn-start{background:var(--accent3);color:#000;}
+.anim-btn-start:hover{background:#059669;}
+.anim-btn-replay{background:var(--accent2);color:#fff;}
+.anim-btn-replay:hover{background:#2563eb;}
+.anim-btn-slow{background:var(--border);color:var(--text);}
+.anim-btn-slow:hover{background:#475569;}
+.anim-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* ── RIGHT AREA (45) ── */
+.right-area{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.canvas-wrap{flex:1;position:relative;min-height:0;}
+#canvas45{width:100%;height:100%;display:block;touch-action:none;}
+
+/* ── BOTTOM AREA (45) ── */
+.bottom-area{background:var(--panel);border-top:1px solid var(--border);flex-shrink:0;overflow-y:auto;max-height:50vh;}
+
+/* Calc display (Tab 4) */
+.calc-display{padding:16px 20px;}
+.calc-step-45{margin-bottom:12px;padding:12px 16px;background:var(--bg);border-radius:8px;border-left:3px solid var(--border);}
+.calc-step-45.highlight{border-left-color:var(--accent);}
+.calc-step-45 .step-num{font-family:'Jua',sans-serif;font-size:14px;color:var(--accent);margin-bottom:4px;}
+.calc-step-45 .step-content{font-size:14px;line-height:1.7;font-family:'Jua',sans-serif;}
+.calc-step-45 .step-content .val{color:var(--accent2);}
+.calc-step-45 .step-content .result{color:var(--accent3);font-size:16px;}
+.calc-step-45 .step-content .error-val{color:var(--danger);font-size:16px;}
+
+/* Comparison table */
+.comparison-table-wrap{padding:0 20px 16px;}
+.comparison-title{font-family:'Jua',sans-serif;font-size:15px;color:var(--muted);margin-bottom:10px;}
+table.comp{width:100%;border-collapse:collapse;font-size:14px;}
+table.comp th{background:var(--bg);color:var(--muted);padding:8px 12px;text-align:center;font-weight:400;font-size:13px;border:1px solid var(--border);}
+table.comp td{padding:8px 12px;text-align:center;border:1px solid var(--border);font-family:'Jua',sans-serif;}
+table.comp tr.best-row td{background:rgba(16,185,129,.2);color:var(--accent3);}
+table.comp tr.current-row td{background:rgba(59,130,246,.15);color:var(--accent2);}
+.question-box{margin:10px 20px 16px;padding:12px 16px;background:rgba(245,158,11,.1);border:2px solid var(--accent);border-radius:10px;font-family:'Jua',sans-serif;font-size:16px;color:var(--accent);text-align:center;}
+
+/* ── ANIMATION DISPLAY (Tab 5) ── */
+.anim-display{padding:16px 20px;display:flex;flex-direction:column;align-items:center;}
+.error-sum-box{text-align:center;margin-bottom:14px;width:100%;}
+.error-sum-label{font-size:16px;color:var(--muted);margin-bottom:6px;font-family:'Jua',sans-serif;}
+.error-sum-value{font-family:'Jua',sans-serif;font-size:72px;font-weight:bold;letter-spacing:2px;transition:color .2s;line-height:1;}
+.current-formula{font-family:'Jua',sans-serif;font-size:18px;color:var(--muted);margin-top:4px;}
+.result-box{display:none;padding:14px 20px;background:rgba(16,185,129,.1);border:2px solid var(--accent3);border-radius:12px;text-align:center;margin-top:10px;width:100%;}
+.result-box .result-title{font-family:'Jua',sans-serif;font-size:22px;color:var(--accent3);margin-bottom:8px;}
+.result-box .result-formula{font-family:'Jua',sans-serif;font-size:18px;color:var(--text);margin-bottom:10px;}
+.result-compare{margin-top:10px;overflow-x:auto;}
+table.res-comp{width:100%;border-collapse:collapse;font-size:13px;}
+table.res-comp th{background:var(--bg);color:var(--muted);padding:7px 10px;text-align:center;font-weight:400;border:1px solid var(--border);}
+table.res-comp td{padding:7px 10px;text-align:center;border:1px solid var(--border);font-family:'Jua',sans-serif;}
+table.res-comp tr.trend-row td{background:rgba(16,185,129,.2);color:var(--accent3);}
+
+/* Flash effect */
+@keyframes flashGreen{0%{box-shadow:0 0 0 0 rgba(16,185,129,.8);}70%{box-shadow:0 0 0 20px rgba(16,185,129,0);}100%{box-shadow:0 0 0 0 rgba(16,185,129,0);}}
+.flash-anim{animation:flashGreen 0.8s ease-out;}
+
+/* Placeholder */
+.placeholder{padding:24px;text-align:center;color:var(--muted);font-size:14px;}
+
+/* Dynamic point rows */
+.point-row-dynamic{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+.point-row-dynamic .pt-label{font-family:'Jua',sans-serif;font-size:20px;min-width:26px;}
+.point-row-dynamic input{width:68px;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-family:'Jua',sans-serif;font-size:20px;text-align:center;font-variant-numeric:tabular-nums;}
+.point-row-dynamic input:focus{outline:none;border-color:var(--accent);}
+.point-row-dynamic span{color:var(--accent2);font-family:'Jua',sans-serif;font-size:17px;}
+.btn-delete-pt{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:2px 6px;}
+.btn-delete-pt:hover{color:var(--danger);}
+.btn-add-pt{width:100%;padding:10px;font-family:'Jua',sans-serif;font-size:15px;border:2px dashed var(--border);border-radius:10px;background:transparent;color:var(--muted);cursor:pointer;margin-top:8px;transition:all .15s;}
+.btn-add-pt:hover{border-color:var(--accent);color:var(--accent);}
+.selected-info{font-family:'Jua',sans-serif;font-size:14px;color:var(--muted);padding:10px;background:var(--bg);border-radius:8px;text-align:center;min-height:40px;display:flex;align-items:center;justify-content:center;gap:6px;}
+.select-section{margin-bottom:16px;}
+.select-section .section-title{font-size:13px;color:var(--muted);margin-bottom:8px;}
+
+/* ── Responsive ── */
+@media(max-width:768px){
+  body{height:auto;overflow-y:auto;}
+  .all-content{height:auto;overflow:auto;}
+  .layout-13{flex-direction:column;height:auto;overflow:auto;}
+  .layout-45{flex-direction:column;height:auto;overflow:auto;}
+  .left-panel-13{width:100%;border-right:none;border-bottom:1px solid var(--border);}
+  .left-panel-45{width:100%;min-width:auto;height:auto;border-right:none;border-bottom:1px solid var(--border);}
+  .graph-canvas-wrap{height:70vw;min-height:260px;max-height:360px;}
+  .calc-area{max-height:none;}
+  .right-area{height:320px;flex:none;}
+  .canvas-wrap{height:320px;flex:none;}
+  .bottom-area{max-height:none;}
+  .error-sum-value{font-size:56px;}
+  .tab-bar{flex-wrap:wrap;}
+  .tab-btn{font-size:15px;padding:8px 18px;}
+}
+</style>
+</head>
+<body>
+
+<!-- Tab bar -->
+<div class="tab-bar">
+  <span class="tab-bar-title">직선 탐험</span>
+  <button class="tab-btn active" id="tabBtn1" onclick="switchTab(1)">1단계</button>
+  <button class="tab-btn" id="tabBtn2" onclick="switchTab(2)">2단계</button>
+  <button class="tab-btn" id="tabBtn3" onclick="switchTab(3)">3단계</button>
+  <button class="tab-btn" id="tabBtn4" onclick="switchTab(4)">4단계</button>
+  <button class="tab-btn" id="tabBtn5" onclick="switchTab(5)">5단계</button>
+  <a href="./index.html" style="margin-left:auto;padding:8px 18px;border-radius:999px;background:#f59e0b;color:#111827;font-family:'Jua',sans-serif;font-size:14px;text-decoration:none;white-space:nowrap;">홈으로</a>
+</div>
+
+<div class="all-content">
+
+  <!-- ════════ LAYOUT A: Tabs 1-3 ════════ -->
+  <div class="layout-13" id="layout13">
+
+    <!-- Left Panel (tabs 1-3) -->
+    <div class="left-panel-13">
+
+      <!-- ═══════ TAB 1 ═══════ -->
+      <div class="tab-panel active" id="panel1">
+        <div class="panel-section-title">직선으로 점을 지나게 하기</div>
+
+        <!-- Target point display -->
+        <div class="t1-target-box" id="t1TargetBox">
+          <div class="t1-target-label">목표 점</div>
+          <div class="t1-target-coord" id="t1TargetCoord">(3, 7)</div>
+        </div>
+
+        <!-- a slider -->
+        <div class="slider-section">
+          <div class="slider-label">
+            <span class="slider-name">a &nbsp;(기울기)</span>
+            <span class="slider-value" id="aVal">0.0</span>
+          </div>
+          <input type="range" id="sliderA" min="-5" max="5" step="0.1" value="0"
+                 oninput="updateT1()">
+          <div class="slider-desc">직선이 얼마나 기울었는지 결정</div>
+        </div>
+
+        <!-- b slider -->
+        <div class="slider-section">
+          <div class="slider-label">
+            <span class="slider-name">b &nbsp;(시작 높이)</span>
+            <span class="slider-value" id="bVal">0.0</span>
+          </div>
+          <input type="range" id="sliderB" min="-20" max="20" step="0.5" value="0"
+                 oninput="updateT1()">
+          <div class="slider-desc">직선이 y축과 만나는 높이 (x=0일 때 y값)</div>
+        </div>
+
+        <!-- Distance feedback -->
+        <div class="t1-distance-box" id="t1DistBox">
+          <div class="t1-dist-label">점까지 세로 거리</div>
+          <div class="t1-dist-value" id="t1DistValue">7.0</div>
+        </div>
+
+        <!-- Success message -->
+        <div class="t1-success" id="t1Success" style="display:none;">
+          직선이 점을 지나갑니다!
+        </div>
+
+        <!-- Next problem button -->
+        <button class="btn-calc" id="t1NextBtn" onclick="t1NextProblem()">다음 문제</button>
+
+        <div class="info-card">
+          <div class="info-card-title">슬라이더를 움직여 보세요!</div>
+          <div class="info-item"><span class="info-arrow">↗</span><span>a를 크게 → 가파르게 올라감</span></div>
+          <div class="info-item"><span class="info-arrow">↘</span><span>a를 음수로 → 직선이 내려감</span></div>
+          <div class="info-item"><span class="info-arrow">↕</span><span>b를 크게 → 직선이 위로 이동</span></div>
+        </div>
+
+        <!-- Score -->
+        <div class="t1-score" id="t1Score">맞힌 문제: 0</div>
+      </div>
+
+      <!-- ═══════ TAB 2 ═══════ -->
+      <div class="tab-panel" id="panel2">
+        <div class="panel-section-title">두 점을 지나는 직선 구하기</div>
+
+        <div class="point-group">
+          <div class="point-group-title" style="color:var(--accent);">첫 번째 점</div>
+          <div class="point-inputs">
+            <label>x₁ =</label>
+            <input type="number" class="point-input" id="t2x1" value="2" step="1" oninput="t2Reset();renderCanvas13();">
+            <label>y₁ =</label>
+            <input type="number" class="point-input" id="t2y1" value="5" step="1" oninput="t2Reset();renderCanvas13();">
+          </div>
+        </div>
+
+        <div class="point-group">
+          <div class="point-group-title" style="color:var(--accent3);">두 번째 점</div>
+          <div class="point-inputs">
+            <label>x₂ =</label>
+            <input type="number" class="point-input" id="t2x2" value="4" step="1" oninput="t2Reset();renderCanvas13();">
+            <label>y₂ =</label>
+            <input type="number" class="point-input" id="t2y2" value="9" step="1" oninput="t2Reset();renderCanvas13();">
+          </div>
+        </div>
+
+        <button class="btn-calc" onclick="calculateT2()">계산하기</button>
+
+        <div class="preset-label">예제 문제 (클릭하여 입력)</div>
+        <div class="preset-btns">
+          <button class="preset-btn" onclick="setT2Preset(2,5,4,9)">(2, 5)와 (4, 9)</button>
+          <button class="preset-btn" onclick="setT2Preset(1,3,5,11)">(1, 3)과 (5, 11)</button>
+          <button class="preset-btn" onclick="setT2Preset(1,10,3,4)">(1, 10)과 (3, 4)</button>
+          <button class="preset-btn" onclick="setT2Preset(0,8,4,2)">(0, 8)과 (4, 2)</button>
+        </div>
+      </div>
+
+      <!-- ═══════ TAB 3 ═══════ -->
+      <div class="tab-panel" id="panel3">
+        <div class="panel-section-title">한 직선 위의 세 점</div>
+
+        <div class="point-group">
+          <div class="point-group-title" style="color:#f87171;">점 A</div>
+          <div class="point-inputs">
+            <label>x =</label>
+            <input type="number" class="point-input" id="t3x1" value="1" step="1" oninput="t3Reset();renderCanvas13();">
+            <label>y =</label>
+            <input type="number" class="point-input" id="t3y1" value="3" step="1" oninput="t3Reset();renderCanvas13();">
+          </div>
+        </div>
+
+        <div class="point-group">
+          <div class="point-group-title" style="color:#4ade80;">점 B</div>
+          <div class="point-inputs">
+            <label>x =</label>
+            <input type="number" class="point-input" id="t3x2" value="3" step="1" oninput="t3Reset();renderCanvas13();">
+            <label>y =</label>
+            <input type="number" class="point-input" id="t3y2" value="7" step="1" oninput="t3Reset();renderCanvas13();">
+          </div>
+        </div>
+
+        <div class="point-group">
+          <div class="point-group-title" style="color:#60a5fa;">점 C</div>
+          <div class="point-inputs">
+            <label>x =</label>
+            <input type="number" class="point-input" id="t3x3" value="5" step="1" oninput="t3Reset();renderCanvas13();">
+            <label>y =</label>
+            <input type="number" class="point-input" id="t3y3" value="11" step="1" oninput="t3Reset();renderCanvas13();">
+          </div>
+        </div>
+
+        <div style="margin-top:12px;font-size:13px;color:var(--muted);margin-bottom:6px;">두 점 조합 선택:</div>
+        <div class="combo-row">
+          <button class="btn-combo" id="comboAB" onclick="selectCombo('AB')">A - B</button>
+          <button class="btn-combo" id="comboBC" onclick="selectCombo('BC')">B - C</button>
+          <button class="btn-combo" id="comboAC" onclick="selectCombo('AC')">A - C</button>
+        </div>
+
+        <div class="preset-label">예제 문제 (클릭하여 입력)</div>
+        <div class="preset-btns">
+          <button class="preset-btn" onclick="setT3Preset(1,3,3,7,5,11)">(1,3), (3,7), (5,11)</button>
+          <button class="preset-btn" onclick="setT3Preset(0,1,2,5,4,9)">(0,1), (2,5), (4,9)</button>
+          <button class="preset-btn" onclick="setT3Preset(1,4,2,7,3,10)">(1,4), (2,7), (3,10)</button>
+        </div>
+      </div>
+
+    </div><!-- /left-panel-13 -->
+
+    <!-- Graph Area -->
+    <div class="graph-area">
+      <div class="graph-canvas-wrap">
+        <canvas id="canvas13"></canvas>
+        <div class="formula-overlay" id="formulaOverlay">y = 0.0x + 0.0</div>
+      </div>
+
+      <!-- Calculation display (tabs 2-3) -->
+      <div class="calc-area hidden" id="calcArea"></div>
+    </div>
+
+  </div><!-- /layout-13 -->
+
+  <!-- ════════ LAYOUT B: Tabs 4-5 ════════ -->
+  <div class="layout-45 hidden" id="layout45">
+
+    <!-- Left panel (tabs 4-5) -->
+    <div class="left-panel-45">
+
+      <!-- TAB 4 controls -->
+      <div id="panel4">
+        <div class="panel-header">직선 위에 없는 점과 오차</div>
+        <div class="panel-body">
+
+          <div class="point-input-group">
+            <label>점을 입력하세요</label>
+            <div id="pointInputs"></div>
+          </div>
+
+          <div class="select-section">
+            <button class="combo-btn" id="btnDrawLine" onclick="enterSelectMode()">📐 직선 긋기</button>
+            <div class="selected-info" id="selectedInfo" style="display:none;"></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- TAB 5 controls -->
+      <div id="panel5" style="display:none;">
+        <div class="panel-header">추세선 — 오차² 합이 가장 작은 직선</div>
+        <div class="panel-body">
+          <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6;">
+            세로 거리는 +일 수도, −일 수도 있어서<br>
+            그냥 더하면 서로 상쇄됩니다.<br>
+            그래서 각 거리를 <strong style="color:var(--accent);">제곱</strong>하여 음수를 없앤 뒤<br>
+            <strong style="color:var(--accent3);">제곱 합이 가장 작은 직선</strong>을 찾습니다.
+          </p>
+
+          <div class="point-display" id="pt5Display"></div>
+
+          <div class="anim-controls">
+            <button class="anim-btn anim-btn-start" id="btnStart" onclick="startAnimation(false)">▶ 추세선 찾기 시작</button>
+            <button class="anim-btn anim-btn-replay" id="btnReplay" onclick="startAnimation(false)" disabled>↺ 다시 보기</button>
+            <button class="anim-btn anim-btn-slow" id="btnSlow" onclick="startAnimation(true)">🐢 천천히 보기</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end left-panel-45 -->
+
+    <!-- Right area -->
+    <div class="right-area">
+      <div class="canvas-wrap">
+        <canvas id="canvas45"></canvas>
+      </div>
+
+      <!-- Bottom area -->
+      <div class="bottom-area" id="bottomArea">
+
+        <!-- Tab 4 bottom -->
+        <div id="bottom4">
+          <div class="calc-display" id="calcDisplay">
+            <div class="placeholder">그래프에서 두 점을 클릭하면 계산 과정이 나타납니다.</div>
+          </div>
+          <div class="comparison-table-wrap" id="compTableWrap" style="display:none;"></div>
+        </div>
+
+        <!-- Tab 5 bottom -->
+        <div id="bottom5" style="display:none;">
+          <div class="anim-display">
+            <div class="error-sum-box" id="errorSumBox" style="display:none;">
+              <div class="error-sum-label">오차² 합 (세로 거리² 의 합계)</div>
+              <div class="error-sum-value" id="errorSumValue">0.00</div>
+              <div class="current-formula" id="currentFormulaDisplay"></div>
+            </div>
+            <div class="result-box" id="resultBox">
+              <div class="result-title">🎉 이것이 추세선!</div>
+              <div class="result-formula" id="resultFormula"></div>
+              <div class="result-compare" id="resultCompare"></div>
+            </div>
+            <div class="placeholder" id="animPlaceholder">버튼을 눌러 추세선을 찾아보세요!</div>
+          </div>
+        </div>
+
+      </div><!-- end bottom-area -->
+    </div><!-- end right-area -->
+
+  </div><!-- /layout-45 -->
+
+</div><!-- /all-content -->
+
+<script>
+// ════════════════════════════════════════════════════════
+//  SHARED STATE
+// ════════════════════════════════════════════════════════
+let currentTab = 1;
+
+// ════════════════════════════════════════════════════════
+//  TABS 1-3 STATE  (from fitting_lab_3)
+// ════════════════════════════════════════════════════════
+let t1_a = 0, t1_b = 0;
+let t1_target = { x: 3, y: 7 };
+let t1_solved = false;
+let t1_score = 0;
+const T1_TOLERANCE = 0.3;
+
+let t2_result  = null;
+let t2_visible = 0;
+let t2_timers  = [];
+
+let t3_combo   = null;
+let t3_results = {};
+let t3_timers  = [];
+
+const canvas13 = document.getElementById('canvas13');
+const ctx13    = canvas13.getContext('2d');
+
+// ════════════════════════════════════════════════════════
+//  TABS 4-5 STATE  (from fitting_lab_4)
+// ════════════════════════════════════════════════════════
+let points = [
+  { x: 1, y: 3 },
+  { x: 3, y: 8 },
+  { x: 5, y: 10 }
+];
+
+let selectMode  = false;
+let selectedPair = [];
+let triedPairs  = [];
+
+let animId        = null;
+let animStartTime = null;
+let animDuration  = 5000;
+let animStartA, animStartB;
+let animOptA, animOptB;
+let animSlow = false;
+
+const canvas45 = document.getElementById('canvas45');
+const ctx45    = canvas45.getContext('2d');
+
+let dragIdx      = -1;
+let lastGrid     = null;
+let dragStartPos = null;
+let dragMoved    = false;
+
+const POINT_LABELS = ['A', 'B', 'C', 'D', 'E'];
+const POINT_COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#a78bfa', '#f472b6'];
+
+// ════════════════════════════════════════════════════════
+//  SHARED TAB SWITCHER
+// ════════════════════════════════════════════════════════
+function switchTab(n) {
+  currentTab = n;
+
+  // Update all 5 tab buttons
+  [1,2,3,4,5].forEach(i => {
+    document.getElementById('tabBtn' + i).classList.toggle('active', i === n);
+  });
+
+  // Show/hide layouts
+  if (n <= 3) {
+    document.getElementById('layout13').classList.remove('hidden');
+    document.getElementById('layout45').classList.add('hidden');
+    // Update left panels 1-3
+    [1,2,3].forEach(i => {
+      document.getElementById('panel' + i).classList.toggle('active', i === n);
+    });
+    const overlay = document.getElementById('formulaOverlay');
+    overlay.style.display = n === 1 ? '' : 'none';
+    if (n === 1) hideCalcArea();
+    // Stop any file4 animation
+    if (animId) { cancelAnimationFrame(animId); animId = null; }
+    // Clear file3 pending timers only when switching between tabs (keep if staying in same tab)
+    renderCanvas13();
+  } else {
+    document.getElementById('layout13').classList.add('hidden');
+    document.getElementById('layout45').classList.remove('hidden');
+    // Clear file3 timers
+    clearTimers(t2_timers);
+    clearTimers(t3_timers);
+
+    document.getElementById('panel4').style.display = n === 4 ? '' : 'none';
+    document.getElementById('panel5').style.display = n === 5 ? '' : 'none';
+    document.getElementById('bottom4').style.display = n === 4 ? '' : 'none';
+    document.getElementById('bottom5').style.display = n === 5 ? '' : 'none';
+
+    if (n === 5) {
+      const display = document.getElementById('pt5Display');
+      display.innerHTML = points.map((pt, i) => {
+        const label = POINT_LABELS[i];
+        const color = POINT_COLORS[i];
+        return `<div class="point-badge">
+          <div class="label" style="color:${color}">${label}</div>
+          <div class="coord" id="pt5_${i}">(${fmt(pt.x)}, ${fmt(pt.y)})</div>
+        </div>`;
+      }).join('');
+    }
+
+    if (animId) { cancelAnimationFrame(animId); animId = null; }
+    redraw45();
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  UTILITIES — TABS 1-3  (from fitting_lab_3)
+// ════════════════════════════════════════════════════════
+function fmtNum(n) {
+  if (!isFinite(n) || isNaN(n)) return '?';
+  if (Math.abs(n - Math.round(n)) < 0.0005) return String(Math.round(n));
+  return Number(n.toFixed(2)).toString();
+}
+
+function fmtLine(a, b) {
+  let aStr;
+  if (Math.abs(a - 1) < 0.0005)       aStr = 'x';
+  else if (Math.abs(a + 1) < 0.0005)  aStr = '−x';
+  else if (Math.abs(a) < 0.0005)      aStr = '';
+  else                                 aStr = fmtNum(a) + 'x';
+
+  let bStr = '';
+  if (Math.abs(b) >= 0.0005) {
+    bStr = b > 0 ? ' + ' + fmtNum(b) : ' − ' + fmtNum(Math.abs(b));
+  }
+  if (!aStr) return 'y = ' + (bStr ? fmtNum(b) : '0');
+  return 'y = ' + aStr + bStr;
+}
+
+function clearTimers(arr) { arr.forEach(clearTimeout); arr.length = 0; }
+
+function showCalcArea() {
+  const ca = document.getElementById('calcArea');
+  ca.classList.remove('hidden');
+  requestAnimationFrame(() => { resizeCanvas13(); renderCanvas13(); });
+}
+function hideCalcArea() {
+  const ca = document.getElementById('calcArea');
+  ca.innerHTML = '';
+  ca.classList.add('hidden');
+  requestAnimationFrame(() => { resizeCanvas13(); renderCanvas13(); });
+}
+
+// ════════════════════════════════════════════════════════
+//  CANVAS ENGINE — TABS 1-3
+// ════════════════════════════════════════════════════════
+function resizeCanvas13() {
+  const wrap = canvas13.parentElement;
+  const dpr  = window.devicePixelRatio || 1;
+  const w = wrap.clientWidth;
+  const h = wrap.clientHeight;
+  canvas13.style.width  = w + 'px';
+  canvas13.style.height = h + 'px';
+  canvas13.width  = w * dpr;
+  canvas13.height = h * dpr;
+  ctx13.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function niceStep(range) {
+  if (range <= 0) return 1;
+  const rough = range / 6;
+  const mag   = Math.pow(10, Math.floor(Math.log10(rough)));
+  const r     = rough / mag;
+  if (r <= 1.5) return mag;
+  if (r <= 3.5) return 2 * mag;
+  if (r <= 7.5) return 5 * mag;
+  return 10 * mag;
+}
+
+// calcAxisRange for tabs 1-3: pts is array of [x,y]
+function t13_calcAxisRange(pts, lineA, lineB, fixedXMin, fixedXMax) {
+  let xMin, xMax, yMin, yMax;
+
+  if (fixedXMin !== undefined) {
+    xMin = fixedXMin; xMax = fixedXMax;
+    const y0 = lineA * xMin + lineB;
+    const y1 = lineA * xMax + lineB;
+    yMin = Math.min(y0, y1, 0) - 5;
+    yMax = Math.max(y0, y1, 0) + 5;
+    if (yMax - yMin < 10) { yMin -= 3; yMax += 3; }
+    return { xMin, xMax, yMin, yMax };
+  }
+
+  if (!pts || pts.length === 0) {
+    return { xMin:-5, xMax:10, yMin:-5, yMax:20 };
+  }
+
+  const xs = pts.map(p => p[0]);
+  const ys = pts.map(p => p[1]);
+  xMin = Math.min(...xs); xMax = Math.max(...xs);
+  yMin = Math.min(...ys); yMax = Math.max(...ys);
+
+  if (lineA !== undefined) {
+    const xExt  = Math.max(xMax - xMin, 2) * 0.3;
+    const evXs  = [xMin - xExt, xMax + xExt];
+    evXs.forEach(x => {
+      const y = lineA * x + lineB;
+      if (y < yMin) yMin = y;
+      if (y > yMax) yMax = y;
+    });
+    xMin -= xExt; xMax += xExt;
+  }
+
+  const xMarg = Math.max((xMax - xMin) * 0.25, 1.5);
+  const yMarg = Math.max((yMax - yMin) * 0.25, 2);
+  xMin = Math.min(xMin - xMarg, -1);
+  xMax = Math.max(xMax + xMarg,  1);
+  yMin = Math.min(yMin - yMarg, -3);
+  yMax = Math.max(yMax + yMarg,  5);
+  return { xMin, xMax, yMin, yMax };
+}
+
+function t13_setupGrid(W, H, axisRange) {
+  const pad   = { top:30, right:30, bottom:42, left:52 };
+  const { xMin, xMax, yMin, yMax } = axisRange;
+  const plotW = W - pad.left - pad.right;
+  const plotH = H - pad.top  - pad.bottom;
+
+  const toX = v => pad.left + (v - xMin) / (xMax - xMin) * plotW;
+  const toY = v => pad.top  + plotH - (v - yMin) / (yMax - yMin) * plotH;
+
+  const xStep = niceStep(xMax - xMin);
+  const yStep = niceStep(yMax - yMin);
+
+  ctx13.lineWidth = 1;
+  ctx13.font = '11px "Noto Sans KR"';
+
+  ctx13.textAlign = 'center';
+  for (let v = Math.ceil(xMin / xStep) * xStep; v <= xMax + xStep * 0.01; v += xStep) {
+    if (!isFinite(v)) break;
+    const px = toX(v);
+    ctx13.strokeStyle = '#1e3050';
+    ctx13.beginPath(); ctx13.moveTo(px, pad.top); ctx13.lineTo(px, pad.top + plotH); ctx13.stroke();
+    if (Math.abs(v) > 1e-9) {
+      ctx13.fillStyle = '#475569';
+      ctx13.fillText(fmtNum(v), px, pad.top + plotH + 16);
+    }
+  }
+
+  ctx13.textAlign = 'right';
+  for (let v = Math.ceil(yMin / yStep) * yStep; v <= yMax + yStep * 0.01; v += yStep) {
+    if (!isFinite(v)) break;
+    const py = toY(v);
+    ctx13.strokeStyle = '#1e3050';
+    ctx13.beginPath(); ctx13.moveTo(pad.left, py); ctx13.lineTo(pad.left + plotW, py); ctx13.stroke();
+    ctx13.fillStyle = '#475569';
+    ctx13.fillText(fmtNum(v), pad.left - 6, py + 4);
+  }
+
+  ctx13.strokeStyle = '#64748b'; ctx13.lineWidth = 1.5;
+  if (yMin <= 0 && yMax >= 0) {
+    const y0 = toY(0);
+    ctx13.beginPath(); ctx13.moveTo(pad.left, y0); ctx13.lineTo(pad.left + plotW, y0); ctx13.stroke();
+    ctx13.fillStyle = '#64748b'; ctx13.textAlign = 'left';
+    ctx13.fillText('x', pad.left + plotW + 4, y0 + 4);
+  }
+  if (xMin <= 0 && xMax >= 0) {
+    const x0 = toX(0);
+    ctx13.beginPath(); ctx13.moveTo(x0, pad.top); ctx13.lineTo(x0, pad.top + plotH); ctx13.stroke();
+    ctx13.fillStyle = '#64748b'; ctx13.textAlign = 'center';
+    ctx13.fillText('y', x0, pad.top - 8);
+    ctx13.fillStyle = '#475569'; ctx13.textAlign = 'right';
+    ctx13.fillText('0', x0 - 4, toY(0) + 14);
+  }
+
+  return { pad, plotW, plotH, xMin, xMax, yMin, yMax, toX, toY };
+}
+
+function t13_drawLine(grid, a, b, color, lw) {
+  const { xMin, xMax, toX, toY } = grid;
+  ctx13.strokeStyle = color;
+  ctx13.lineWidth   = lw || 2.5;
+  ctx13.setLineDash([]);
+  ctx13.beginPath();
+  const steps = 120;
+  for (let i = 0; i <= steps; i++) {
+    const x  = xMin + (xMax - xMin) * i / steps;
+    const px = toX(x), py = toY(a * x + b);
+    i === 0 ? ctx13.moveTo(px, py) : ctx13.lineTo(px, py);
+  }
+  ctx13.stroke();
+}
+
+function t13_drawPoint(grid, x, y, color, r, label, labelOffset) {
+  const px = grid.toX(x), py = grid.toY(y);
+  ctx13.fillStyle = color;
+  ctx13.beginPath(); ctx13.arc(px, py, r || 7, 0, Math.PI * 2); ctx13.fill();
+  if (label) {
+    const ox = (labelOffset && labelOffset[0]) || 0;
+    const oy = (labelOffset && labelOffset[1]) || -(r || 7) - 10;
+    ctx13.fillStyle = color;
+    ctx13.font = 'bold 14px "Jua"';
+    ctx13.textAlign = 'center';
+    ctx13.textBaseline = 'middle';
+    ctx13.fillText(label, px + ox, py + oy);
+    ctx13.textBaseline = 'alphabetic';
+  }
+}
+
+function drawCoordLabel(grid, x, y, color, alpha) {
+  ctx13.globalAlpha = alpha !== undefined ? alpha : 1;
+  ctx13.fillStyle   = color;
+  ctx13.font        = '11px "Noto Sans KR"';
+  ctx13.textAlign   = 'left';
+  ctx13.fillText(`(${fmtNum(x)}, ${fmtNum(y)})`, grid.toX(x) + 12, grid.toY(y) - 3);
+  ctx13.globalAlpha = 1;
+}
+
+// ════════════════════════════════════════════════════════
+//  MAIN RENDER DISPATCHER — TABS 1-3
+// ════════════════════════════════════════════════════════
+function renderCanvas13() {
+  const dpr = window.devicePixelRatio || 1;
+  const W   = canvas13.width  / dpr;
+  const H   = canvas13.height / dpr;
+  ctx13.clearRect(0, 0, W, H);
+  ctx13.fillStyle = '#1e293b';
+  ctx13.fillRect(0, 0, W, H);
+
+  if (W < 10 || H < 10) return;
+
+  if      (currentTab === 1) renderT1(W, H);
+  else if (currentTab === 2) renderT2(W, H);
+  else if (currentTab === 3) renderT3(W, H);
+}
+
+// ════════════════════════════════════════════════════════
+//  TAB 1 — Hit the target point
+// ════════════════════════════════════════════════════════
+function renderT1(W, H) {
+  const a = t1_a, b = t1_b;
+  const tx = t1_target.x, ty = t1_target.y;
+
+  // Axis range: include target point and line
+  const pts = [[tx, ty]];
+  const axisRange = t13_calcAxisRange(pts, a, b, -10, 10);
+  const grid = t13_setupGrid(W, H, axisRange);
+
+  // Draw line
+  t13_drawLine(grid, a, b, '#3b82f6', 3);
+
+  // Draw vertical error line from target to line
+  const predicted = a * tx + b;
+  const dist = Math.abs(ty - predicted);
+  if (dist > T1_TOLERANCE) {
+    const px = grid.toX(tx);
+    const py1 = grid.toY(ty);
+    const py2 = grid.toY(predicted);
+    ctx13.strokeStyle = '#ef4444';
+    ctx13.lineWidth = 2;
+    ctx13.setLineDash([5, 4]);
+    ctx13.beginPath(); ctx13.moveTo(px, py1); ctx13.lineTo(px, py2); ctx13.stroke();
+    ctx13.setLineDash([]);
+  }
+
+  // Draw target point (big, pulsing ring)
+  const tpx = grid.toX(tx), tpy = grid.toY(ty);
+  if (!t1_solved) {
+    ctx13.strokeStyle = 'rgba(245,158,11,0.4)';
+    ctx13.lineWidth = 3;
+    ctx13.beginPath(); ctx13.arc(tpx, tpy, 16, 0, Math.PI * 2); ctx13.stroke();
+  }
+  t13_drawPoint(grid, tx, ty, t1_solved ? '#10b981' : '#f59e0b', 8, `(${tx}, ${ty})`);
+
+  // Draw y-intercept marker
+  t13_drawPoint(grid, 0, b, 'rgba(59,130,246,0.5)', 4);
+}
+
+function updateT1() {
+  t1_a = parseFloat(document.getElementById('sliderA').value);
+  t1_b = parseFloat(document.getElementById('sliderB').value);
+  document.getElementById('aVal').textContent = t1_a.toFixed(1);
+  document.getElementById('bVal').textContent = t1_b.toFixed(1);
+  const bPart = t1_b >= 0
+    ? ' + ' + Math.abs(t1_b).toFixed(1)
+    : ' − ' + Math.abs(t1_b).toFixed(1);
+  document.getElementById('formulaOverlay').textContent =
+    'y = ' + t1_a.toFixed(1) + 'x' + bPart;
+
+  // Check distance to target
+  const predicted = t1_a * t1_target.x + t1_b;
+  const dist = Math.abs(t1_target.y - predicted);
+  const distEl = document.getElementById('t1DistValue');
+  const distBox = document.getElementById('t1DistBox');
+  const successEl = document.getElementById('t1Success');
+
+  if (dist <= T1_TOLERANCE && !t1_solved) {
+    // Solved!
+    t1_solved = true;
+    t1_score++;
+    document.getElementById('t1Score').textContent = '맞힌 문제: ' + t1_score;
+    distBox.style.display = 'none';
+    successEl.style.display = '';
+  } else if (!t1_solved) {
+    distBox.style.display = '';
+    successEl.style.display = 'none';
+    distEl.textContent = dist.toFixed(1);
+    // Color: red when far, green when close
+    const ratio = Math.min(dist / 10, 1);
+    distEl.style.color = dist < 1 ? 'var(--accent3)' : dist < 3 ? 'var(--accent)' : 'var(--danger)';
+    distBox.classList.toggle('close', dist < 1);
+  }
+
+  renderCanvas13();
+}
+
+function t1NextProblem() {
+  // Generate integer target reachable within slider ranges (a: -5~5, b: -20~20)
+  // x in [-8, 8] (integer, nonzero preferred), y = a*x + b must be achievable
+  const xCandidates = [-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7];
+  const tx = xCandidates[Math.floor(Math.random() * xCandidates.length)];
+  // For this x, y range is [(-5)*x + (-20), 5*x + 20] (sorted)
+  const yLow  = Math.max(Math.ceil(Math.min(-5*tx - 20, 5*tx - 20)), -20);
+  const yHigh = Math.min(Math.floor(Math.max(-5*tx + 20, 5*tx + 20)), 20);
+  const ty = Math.floor(Math.random() * (yHigh - yLow + 1)) + yLow;
+
+  t1_target = { x: tx, y: ty };
+  t1_solved = false;
+
+  // Reset sliders to 0
+  document.getElementById('sliderA').value = 0;
+  document.getElementById('sliderB').value = 0;
+  t1_a = 0; t1_b = 0;
+
+  // Update display
+  document.getElementById('t1TargetCoord').textContent = `(${tx}, ${ty})`;
+  document.getElementById('t1DistBox').style.display = '';
+  document.getElementById('t1Success').style.display = 'none';
+
+  updateT1();
+}
+
+// ════════════════════════════════════════════════════════
+//  TAB 2 — Two Points
+// ════════════════════════════════════════════════════════
+function renderT2(W, H) {
+  const x1 = parseFloat(document.getElementById('t2x1').value);
+  const y1 = parseFloat(document.getElementById('t2y1').value);
+  const x2 = parseFloat(document.getElementById('t2x2').value);
+  const y2 = parseFloat(document.getElementById('t2y2').value);
+
+  const pts = [];
+  const v1 = isFinite(x1) && isFinite(y1);
+  const v2 = isFinite(x2) && isFinite(y2);
+  if (v1) pts.push([x1, y1]);
+  if (v2) pts.push([x2, y2]);
+
+  const showLine = t2_result && t2_visible >= 3;
+  const axisRange = t13_calcAxisRange(
+    pts,
+    showLine ? t2_result.a : undefined,
+    showLine ? t2_result.b : undefined
+  );
+  const grid = t13_setupGrid(W, H, axisRange);
+
+  if (showLine) t13_drawLine(grid, t2_result.a, t2_result.b, '#3b82f6', 2.5);
+
+  if (v1) {
+    t13_drawPoint(grid, x1, y1, '#f59e0b', 8);
+    drawCoordLabel(grid, x1, y1, '#f59e0b');
+    ctx13.fillStyle = '#f59e0b'; ctx13.font = 'bold 13px "Jua"';
+    ctx13.textAlign = 'center';
+    ctx13.fillText('①', grid.toX(x1), grid.toY(y1) - 12);
+  }
+  if (v2) {
+    t13_drawPoint(grid, x2, y2, '#10b981', 8);
+    drawCoordLabel(grid, x2, y2, '#10b981');
+    ctx13.fillStyle = '#10b981'; ctx13.font = 'bold 13px "Jua"';
+    ctx13.textAlign = 'center';
+    ctx13.fillText('②', grid.toX(x2), grid.toY(y2) - 12);
+  }
+}
+
+function t2Reset() {
+  clearTimers(t2_timers);
+  t2_result  = null;
+  t2_visible = 0;
+  const btn = document.querySelector('#panel2 .btn-calc');
+  if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.style.cursor = ''; }
+}
+
+function setT2Preset(x1, y1, x2, y2) {
+  document.getElementById('t2x1').value = x1;
+  document.getElementById('t2y1').value = y1;
+  document.getElementById('t2x2').value = x2;
+  document.getElementById('t2y2').value = y2;
+  t2Reset();
+  hideCalcArea();
+}
+
+function calculateT2() {
+  const btn = document.querySelector('#panel2 .btn-calc');
+
+  if (t2_result && t2_visible < 3) {
+    revealT2(t2_visible + 1);
+    if (t2_visible >= 3) {
+      btn.disabled = true;
+      btn.style.opacity = '0.4';
+      btn.style.cursor = 'not-allowed';
+    }
+    return;
+  }
+
+  if (t2_result && t2_visible >= 3) return;
+
+  const x1 = parseFloat(document.getElementById('t2x1').value);
+  const y1 = parseFloat(document.getElementById('t2y1').value);
+  const x2 = parseFloat(document.getElementById('t2x2').value);
+  const y2 = parseFloat(document.getElementById('t2y2').value);
+
+  if (!isFinite(x1) || !isFinite(y1) || !isFinite(x2) || !isFinite(y2)) {
+    showError13('두 점의 좌표를 모두 입력해 주세요.'); return;
+  }
+  if (Math.abs(x2 - x1) < 1e-9) {
+    showError13('두 점의 x 좌표가 같으면 기울기를 구할 수 없습니다.'); return;
+  }
+
+  const a = (y2 - y1) / (x2 - x1);
+  const b = y1 - a * x1;
+  t2_result  = { a, b, x1, y1, x2, y2 };
+  t2_visible = 0;
+
+  document.getElementById('calcArea').innerHTML = '';
+  showCalcArea();
+  revealT2(1);
+}
+
+function revealT2(step) {
+  if (!t2_result) return;
+  const { a, b, x1, y1, x2, y2 } = t2_result;
+  const dy = y2 - y1, dx = x2 - x1;
+  const ca = document.getElementById('calcArea');
+
+  t2_visible = step;
+
+  if (step === 1) {
+    const d = document.createElement('div');
+    d.className = 'calc-step';
+    d.innerHTML =
+      `<div class="step-header">① 기울기 a 구하기</div>` +
+      `<div class="calc-line">a = (y₂ − y₁) ÷ (x₂ − x₁)</div>` +
+      `<div class="calc-line">a = (${fmtNum(y2)} − ${fmtNum(y1)}) ÷ (${fmtNum(x2)} − ${fmtNum(x1)})</div>` +
+      `<div class="calc-line">a = ${fmtNum(dy)} ÷ ${fmtNum(dx)}</div>` +
+      `<div class="calc-line hl">a = ${fmtNum(a)}</div>`;
+    ca.appendChild(d);
+    ca.scrollTop = ca.scrollHeight;
+
+  } else if (step === 2) {
+    const ax1 = a * x1;
+    const d = document.createElement('div');
+    d.className = 'calc-step';
+    d.innerHTML =
+      `<div class="step-header">② 시작 높이 b 구하기 &nbsp;(첫 번째 점 대입)</div>` +
+      `<div class="calc-line">y = ax + b 에서</div>` +
+      `<div class="calc-line">${fmtNum(y1)} = ${fmtNum(a)} × ${fmtNum(x1)} + b</div>` +
+      `<div class="calc-line">${fmtNum(y1)} = ${fmtNum(ax1)} + b</div>` +
+      `<div class="calc-line hl">b = ${fmtNum(b)}</div>`;
+    ca.appendChild(d);
+    ca.scrollTop = ca.scrollHeight;
+
+  } else if (step === 3) {
+    const d = document.createElement('div');
+    d.className = 'calc-step final';
+    d.innerHTML =
+      `<div class="step-header green">③ 직선의 식</div>` +
+      `<div class="calc-final">${fmtLine(a, b)}</div>`;
+    ca.appendChild(d);
+    ca.scrollTop = ca.scrollHeight;
+    renderCanvas13();
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  TAB 3 — Three Points
+// ════════════════════════════════════════════════════════
+function renderT3(W, H) {
+  const coords = read3Pts();
+  const { x1,y1,x2,y2,x3,y3, v1,v2,v3 } = coords;
+
+  const pts = [];
+  if (v1) pts.push([x1, y1]);
+  if (v2) pts.push([x2, y2]);
+  if (v3) pts.push([x3, y3]);
+
+  const res = t3_combo ? t3_results[t3_combo] : null;
+  const axisRange = t13_calcAxisRange(
+    pts,
+    res ? res.a : undefined,
+    res ? res.b : undefined
+  );
+  const grid = t13_setupGrid(W, H, axisRange);
+
+  if (res) t13_drawLine(grid, res.a, res.b, '#3b82f6', 2.5);
+
+  const ptDefs = [
+    { x:x1, y:y1, valid:v1, color:'#f87171', name:'A', idx:0 },
+    { x:x2, y:y2, valid:v2, color:'#4ade80', name:'B', idx:1 },
+    { x:x3, y:y3, valid:v3, color:'#60a5fa', name:'C', idx:2 },
+  ];
+
+  const selSet = new Set(
+    t3_combo === 'AB' ? [0,1] :
+    t3_combo === 'BC' ? [1,2] :
+    t3_combo === 'AC' ? [0,2] : []
+  );
+
+  ptDefs.forEach(({ x, y, valid, color, name, idx }) => {
+    if (!valid) return;
+    const selected = !t3_combo || selSet.has(idx);
+    const alpha    = selected ? 1 : 0.45;
+    const r        = selected ? 9  : 7;
+
+    ctx13.globalAlpha = alpha;
+    ctx13.fillStyle   = color;
+    ctx13.beginPath(); ctx13.arc(grid.toX(x), grid.toY(y), r, 0, Math.PI * 2); ctx13.fill();
+    ctx13.globalAlpha = 1;
+
+    ctx13.globalAlpha = alpha;
+    ctx13.fillStyle = color;
+    ctx13.font = 'bold 15px "Jua"';
+    ctx13.textAlign = 'center'; ctx13.textBaseline = 'middle';
+    ctx13.fillText(name, grid.toX(x), grid.toY(y) - r - 12);
+    ctx13.textBaseline = 'alphabetic';
+
+    drawCoordLabel(grid, x, y, color, alpha * 0.9);
+    ctx13.globalAlpha = 1;
+  });
+}
+
+function read3Pts() {
+  const get = id => parseFloat(document.getElementById(id).value);
+  const x1=get('t3x1'), y1=get('t3y1');
+  const x2=get('t3x2'), y2=get('t3y2');
+  const x3=get('t3x3'), y3=get('t3y3');
+  return {
+    x1,y1,x2,y2,x3,y3,
+    v1: isFinite(x1) && isFinite(y1),
+    v2: isFinite(x2) && isFinite(y2),
+    v3: isFinite(x3) && isFinite(y3),
+  };
+}
+
+function t3Reset() {
+  clearTimers(t3_timers);
+  t3_combo   = null;
+  t3_results = {};
+  ['AB','BC','AC'].forEach(c => document.getElementById('combo'+c).classList.remove('active'));
+  hideCalcArea();
+}
+
+function setT3Preset(x1,y1,x2,y2,x3,y3) {
+  document.getElementById('t3x1').value = x1; document.getElementById('t3y1').value = y1;
+  document.getElementById('t3x2').value = x2; document.getElementById('t3y2').value = y2;
+  document.getElementById('t3x3').value = x3; document.getElementById('t3y3').value = y3;
+  t3Reset();
+}
+
+function selectCombo(combo) {
+  const { x1,y1,x2,y2,x3,y3,v1,v2,v3 } = read3Pts();
+  if (!v1 || !v2 || !v3) { showError13('세 점의 좌표를 모두 입력해 주세요.'); return; }
+
+  const ca = document.getElementById('calcArea');
+  clearTimers(t3_timers);
+
+  let px1, py1, px2, py2, lbl1, lbl2;
+  if (combo === 'AB') { px1=x1;py1=y1; px2=x2;py2=y2; lbl1='A';lbl2='B'; }
+  else if (combo === 'BC') { px1=x2;py1=y2; px2=x3;py2=y3; lbl1='B';lbl2='C'; }
+  else { px1=x1;py1=y1; px2=x3;py2=y3; lbl1='A';lbl2='C'; }
+
+  if (Math.abs(px2 - px1) < 1e-9) {
+    showError13('선택한 두 점의 x 좌표가 같아 기울기를 구할 수 없습니다.'); return;
+  }
+
+  const a = (py2 - py1) / (px2 - px1);
+  const b = py1 - a * px1;
+  t3_results[combo] = { a, b };
+
+  t3_combo = combo;
+  ['AB','BC','AC'].forEach(c =>
+    document.getElementById('combo'+c).classList.toggle('active', c === combo));
+
+  document.getElementById('calcArea').innerHTML = '';
+  showCalcArea();
+
+  const dy = py2-py1, dx = px2-px1;
+  const step1 = document.createElement('div');
+  step1.className = 'calc-step';
+  step1.innerHTML =
+    `<div class="step-header">① 기울기 a 구하기 &nbsp;(점 ${lbl1}과 점 ${lbl2} 사용)</div>` +
+    `<div class="calc-line">a = (y${lbl2} − y${lbl1}) ÷ (x${lbl2} − x${lbl1})</div>` +
+    `<div class="calc-line">a = (${fmtNum(py2)} − ${fmtNum(py1)}) ÷ (${fmtNum(px2)} − ${fmtNum(px1)})</div>` +
+    `<div class="calc-line">a = ${fmtNum(dy)} ÷ ${fmtNum(dx)}</div>` +
+    `<div class="calc-line hl">a = ${fmtNum(a)}</div>`;
+  ca.appendChild(step1);
+  ca.scrollTop = ca.scrollHeight;
+
+  t3_timers.push(setTimeout(() => {
+    const ax1 = a * px1;
+    const step2 = document.createElement('div');
+    step2.className = 'calc-step';
+    step2.innerHTML =
+      `<div class="step-header">② 시작 높이 b 구하기 &nbsp;(점 ${lbl1} 대입)</div>` +
+      `<div class="calc-line">y = ax + b 에서</div>` +
+      `<div class="calc-line">${fmtNum(py1)} = ${fmtNum(a)} × ${fmtNum(px1)} + b</div>` +
+      `<div class="calc-line">${fmtNum(py1)} = ${fmtNum(ax1)} + b</div>` +
+      `<div class="calc-line hl">b = ${fmtNum(b)}</div>`;
+    ca.appendChild(step2);
+    ca.scrollTop = ca.scrollHeight;
+
+    t3_timers.push(setTimeout(() => {
+      const step3 = document.createElement('div');
+      step3.className = 'calc-step final';
+      step3.innerHTML =
+        `<div class="step-header green">③ 직선의 식</div>` +
+        `<div class="calc-final">${fmtLine(a, b)}</div>`;
+      ca.appendChild(step3);
+      ca.scrollTop = ca.scrollHeight;
+
+      t3_timers.push(setTimeout(() => showT3Table(x1,y1,x2,y2,x3,y3), 600));
+    }, 800));
+  }, 800));
+
+  renderCanvas13();
+}
+
+function showT3Table(x1,y1,x2,y2,x3,y3) {
+  const ca = document.getElementById('calcArea');
+
+  const old = ca.querySelector('.result-wrap');
+  if (old) old.remove();
+
+  const defs = [
+    { key:'AB', label:'A - B', p1:[x1,y1], p2:[x2,y2] },
+    { key:'BC', label:'B - C', p1:[x2,y2], p2:[x3,y3] },
+    { key:'AC', label:'A - C', p1:[x1,y1], p2:[x3,y3] },
+  ];
+
+  const allDone = defs.every(d => t3_results[d.key]);
+
+  let rows = '';
+  defs.forEach(({ key, label }) => {
+    const r = t3_results[key];
+    if (r) {
+      rows += `<tr class="done">
+        <td><strong>${label}</strong></td>
+        <td>${fmtNum(r.a)}</td>
+        <td>${fmtNum(r.b)}</td>
+        <td class="fml">${fmtLine(r.a, r.b)}</td>
+      </tr>`;
+    } else {
+      rows += `<tr>
+        <td>${label}</td><td>—</td><td>—</td><td>—</td>
+      </tr>`;
+    }
+  });
+
+  let conclusion = '';
+  if (allDone) {
+    const refs = Object.values(t3_results);
+    const allSame = refs.every(r =>
+      Math.abs(r.a - refs[0].a) < 0.01 && Math.abs(r.b - refs[0].b) < 0.01
+    );
+    if (allSame) {
+      conclusion = `<div class="success-msg">🎉 어떤 두 점을 골라도 같은 직선이 나옵니다!</div>`;
+    } else {
+      conclusion = `<div class="warn-msg">결과가 달라요! 세 점이 한 직선 위에 있지 않습니다.</div>`;
+    }
+  }
+
+  const wrap = document.createElement('div');
+  wrap.className = 'result-wrap';
+  wrap.innerHTML =
+    `<table class="result-table">
+      <thead><tr>
+        <th>조합</th><th>기울기 a</th><th>시작 높이 b</th><th>직선의 식</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>${conclusion}`;
+  ca.appendChild(wrap);
+  ca.scrollTop = ca.scrollHeight;
+}
+
+function showError13(msg) {
+  document.getElementById('calcArea').innerHTML = `<div class="error-inline">${msg}</div>`;
+  showCalcArea();
+}
+
+// ════════════════════════════════════════════════════════
+//  UTILITIES — TABS 4-5  (from fitting_lab_4)
+// ════════════════════════════════════════════════════════
+function fmt(v, dec = 2) {
+  const r = Math.round(v * 1000) / 1000;
+  const rounded = Math.round(r * 100) / 100;
+  return rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(dec).replace(/\.?0+$/, '');
+}
+
+function fmtFormula(a, b) {
+  const aStr = fmt(a);
+  const bAbs = Math.abs(b);
+  const bStr = fmt(bAbs);
+  if (b >= 0) return `y = ${aStr}x + ${bStr}`;
+  return `y = ${aStr}x \u2212 ${bStr}`;
+}
+
+// ════════════════════════════════════════════════════════
+//  CANVAS ENGINE — TABS 4-5
+// ════════════════════════════════════════════════════════
+function resizeCanvas45() {
+  const wrap = canvas45.parentElement;
+  const dpr = window.devicePixelRatio || 1;
+  canvas45.width = wrap.clientWidth * dpr;
+  canvas45.height = wrap.clientHeight * dpr;
+  ctx45.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+// calcAxisRange for tabs 4-5: pts is array of {x, y}
+function t45_calcAxisRange(pts, extraA, extraB) {
+  if (!pts || pts.length === 0) return { xMin: 0, xMax: 10, yMin: 0, yMax: 10 };
+  const xs = pts.map(p => p.x);
+  const ys = pts.map(p => p.y);
+  let xMin = Math.min(...xs), xMax = Math.max(...xs);
+  let yMin = Math.min(...ys), yMax = Math.max(...ys);
+
+  if (extraA !== undefined) {
+    for (let t = xMin; t <= xMax; t += (xMax - xMin) / 30 || 0.1) {
+      const v = extraA * t + extraB;
+      if (v < yMin) yMin = v;
+      if (v > yMax) yMax = v;
+    }
+  }
+
+  const xMg = Math.max((xMax - xMin) * 0.15, 1);
+  const yMg = Math.max((yMax - yMin) * 0.18, 1);
+  xMin = Math.min(xMin - xMg, 0);
+  xMax = xMax + xMg;
+  yMin = Math.min(yMin - yMg, 0);
+  yMax = yMax + yMg;
+  return { xMin, xMax, yMin, yMax };
+}
+
+function t45_drawBase(pts, range) {
+  const W = canvas45.width / (window.devicePixelRatio || 1);
+  const H = canvas45.height / (window.devicePixelRatio || 1);
+  ctx45.clearRect(0, 0, W, H);
+  ctx45.fillStyle = '#1e293b';
+  ctx45.fillRect(0, 0, W, H);
+
+  const pad = { top: 30, right: 30, bottom: 42, left: 55 };
+  const { xMin, xMax, yMin, yMax } = range;
+  const plotW = W - pad.left - pad.right;
+  const plotH = H - pad.top - pad.bottom;
+
+  function toX(v) { return pad.left + (v - xMin) / (xMax - xMin) * plotW; }
+  function toY(v) { return pad.top + plotH - (v - yMin) / (yMax - yMin) * plotH; }
+
+  const xStep = niceStep(xMax - xMin);
+  const yStep = niceStep(yMax - yMin);
+  ctx45.strokeStyle = '#253449';
+  ctx45.lineWidth = 1;
+  ctx45.font = '11px "Noto Sans KR"';
+  ctx45.fillStyle = '#64748b';
+  ctx45.textAlign = 'center';
+  for (let v = Math.ceil(xMin / xStep) * xStep; v <= xMax + 1e-9; v += xStep) {
+    const px = toX(v);
+    ctx45.beginPath(); ctx45.moveTo(px, pad.top); ctx45.lineTo(px, pad.top + plotH); ctx45.stroke();
+    ctx45.fillText(fmt(v, 0), px, pad.top + plotH + 16);
+  }
+  ctx45.textAlign = 'right';
+  for (let v = Math.ceil(yMin / yStep) * yStep; v <= yMax + 1e-9; v += yStep) {
+    const py = toY(v);
+    ctx45.beginPath(); ctx45.moveTo(pad.left, py); ctx45.lineTo(pad.left + plotW, py); ctx45.stroke();
+    ctx45.fillText(fmt(v, 0), pad.left - 6, py + 4);
+  }
+
+  ctx45.strokeStyle = '#475569'; ctx45.lineWidth = 1.5;
+  if (yMin <= 0 && yMax >= 0) {
+    const y0 = toY(0);
+    ctx45.beginPath(); ctx45.moveTo(pad.left, y0); ctx45.lineTo(pad.left + plotW, y0); ctx45.stroke();
+  }
+  if (xMin <= 0 && xMax >= 0) {
+    const x0 = toX(0);
+    ctx45.beginPath(); ctx45.moveTo(x0, pad.top); ctx45.lineTo(x0, pad.top + plotH); ctx45.stroke();
+  }
+
+  ctx45.fillStyle = '#94a3b8'; ctx45.font = '12px "Noto Sans KR"'; ctx45.textAlign = 'center';
+  ctx45.fillText('x', pad.left + plotW / 2, H - 4);
+  ctx45.save(); ctx45.translate(12, pad.top + plotH / 2); ctx45.rotate(-Math.PI / 2); ctx45.fillText('y', 0, 0); ctx45.restore();
+
+  function fromX(px) { return xMin + (px - pad.left) / plotW * (xMax - xMin); }
+  function fromY(py) { return yMax - (py - pad.top) / plotH * (yMax - yMin); }
+
+  return { toX, toY, fromX, fromY, pad, plotW, plotH, W, H, xMin, xMax, yMin, yMax };
+}
+
+function t45_drawPoints(pts, toX, toY, labels) {
+  if (!labels) labels = POINT_LABELS.slice(0, pts.length);
+  pts.forEach((p, i) => {
+    const px = toX(p.x), py = toY(p.y);
+    const isSelected = currentTab === 4 && selectedPair.includes(i);
+    const isDragging = currentTab === 4 && dragIdx === i;
+    const r = isDragging ? 11 : 7;
+
+    if (isSelected) {
+      ctx45.beginPath();
+      ctx45.arc(px, py, r + 5, 0, 2 * Math.PI);
+      ctx45.strokeStyle = '#ffffff';
+      ctx45.lineWidth = 2.5;
+      ctx45.stroke();
+    }
+
+    ctx45.beginPath();
+    ctx45.arc(px, py, r, 0, 2 * Math.PI);
+    ctx45.fillStyle = POINT_COLORS[i] || '#f59e0b';
+    ctx45.fill();
+    ctx45.strokeStyle = '#0f172a';
+    ctx45.lineWidth = 2;
+    ctx45.stroke();
+
+    if (isDragging) {
+      const txt = `(${fmt(p.x)}, ${fmt(p.y)})`;
+      ctx45.font = 'bold 15px "Jua"'; ctx45.textAlign = 'center';
+      const tw = ctx45.measureText(txt).width + 12;
+      const th = 22;
+      const tx = px, ty = py + r + 20;
+      ctx45.fillStyle = 'rgba(0,0,0,.8)';
+      ctx45.beginPath();
+      ctx45.roundRect(tx - tw / 2, ty - th / 2 - 2, tw, th, 6);
+      ctx45.fill();
+      ctx45.fillStyle = POINT_COLORS[i] || '#f59e0b';
+      ctx45.fillText(txt, tx, ty + 4);
+    }
+
+    ctx45.fillStyle = POINT_COLORS[i] || '#f59e0b';
+    ctx45.font = 'bold 14px "Jua"';
+    ctx45.textAlign = 'center';
+    ctx45.fillText(labels[i], px, py - r - 8);
+  });
+}
+
+function t45_drawLine(a, b, xMin, xMax, toX, toY, color, width) {
+  color = color || '#3b82f6';
+  width = width || 2.5;
+  ctx45.strokeStyle = color; ctx45.lineWidth = width;
+  ctx45.beginPath();
+  ctx45.moveTo(toX(xMin), toY(a * xMin + b));
+  ctx45.lineTo(toX(xMax), toY(a * xMax + b));
+  ctx45.stroke();
+}
+
+function t45_drawErrorLine(pt, a, b, toX, toY, color) {
+  color = color || '#ef4444';
+  const predicted = a * pt.x + b;
+  const px = toX(pt.x);
+  const py1 = toY(pt.y);
+  const py2 = toY(predicted);
+  ctx45.strokeStyle = color; ctx45.lineWidth = 2;
+  ctx45.setLineDash([5, 4]);
+  ctx45.beginPath(); ctx45.moveTo(px, py1); ctx45.lineTo(px, py2); ctx45.stroke();
+  ctx45.setLineDash([]);
+
+  const err = Math.abs(pt.y - predicted);
+  if (err > 0.01) {
+    ctx45.fillStyle = color; ctx45.font = 'bold 12px "Jua"'; ctx45.textAlign = 'left';
+    ctx45.fillText(fmt(err), px + 7, (py1 + py2) / 2 + 4);
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  MATH HELPERS — TABS 4-5
+// ════════════════════════════════════════════════════════
+function calcLine(p1, p2) {
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  if (Math.abs(dx) < 1e-10) return null;
+  const a = dy / dx;
+  const b = p1.y - a * p1.x;
+  return { a, b };
+}
+
+function calcSquaredError(line, pts) {
+  return pts.reduce((sum, p) => { const d = p.y - (line.a * p.x + line.b); return sum + d * d; }, 0);
+}
+
+function calcLeastSquares(pts) {
+  const n = pts.length;
+  const sumX  = pts.reduce((s, p) => s + p.x, 0);
+  const sumY  = pts.reduce((s, p) => s + p.y, 0);
+  const sumXY = pts.reduce((s, p) => s + p.x * p.y, 0);
+  const sumX2 = pts.reduce((s, p) => s + p.x * p.x, 0);
+  const denom = n * sumX2 - sumX * sumX;
+  if (Math.abs(denom) < 1e-10) return { a: 0, b: sumY / n };
+  const a = (n * sumXY - sumX * sumY) / denom;
+  const b = (sumY - a * sumX) / n;
+  return { a, b };
+}
+
+// ════════════════════════════════════════════════════════
+//  POINT INPUT RENDERING (tabs 4-5)
+// ════════════════════════════════════════════════════════
+function renderPointInputs() {
+  const container = document.getElementById('pointInputs');
+  let html = '';
+  points.forEach((pt, i) => {
+    const label = POINT_LABELS[i];
+    const color = POINT_COLORS[i];
+    const canDelete = i >= 3;
+    const deleteBtn = canDelete
+      ? `<button class="btn-delete-pt" onclick="deletePoint(${i})" title="점 ${label} 삭제">✕</button>`
+      : '';
+    html += `
+      <div class="point-row-dynamic">
+        <span class="pt-label" style="color:${color}">${label}</span>
+        <span>(</span>
+        <input type="number" id="px_${i}" value="${pt.x}" step="0.5"
+               oninput="onPointInputChange(${i})">
+        <span>,</span>
+        <input type="number" id="py_${i}" value="${pt.y}" step="0.5"
+               oninput="onPointInputChange(${i})">
+        <span>)</span>
+        ${deleteBtn}
+      </div>`;
+  });
+
+  if (points.length < 5) {
+    html += `<button class="btn-add-pt" onclick="addPoint()">+ 점 추가</button>`;
+  }
+  container.innerHTML = html;
+}
+
+function onPointInputChange(i) {
+  const x = parseFloat(document.getElementById('px_' + i).value);
+  const y = parseFloat(document.getElementById('py_' + i).value);
+  if (!isNaN(x)) points[i].x = x;
+  if (!isNaN(y)) points[i].y = y;
+  onPointsChanged();
+}
+
+function onPointsChanged() {
+  selectMode = false;
+  selectedPair = [];
+  triedPairs = [];
+  exitSelectMode();
+  showCalcPlaceholder();
+  hideCompTable();
+  redraw45();
+}
+
+function addPoint() {
+  if (points.length >= 5) return;
+  const last = points[points.length - 1];
+  points.push({ x: last.x + 2, y: last.y + 2 });
+  selectedPair = [];
+  triedPairs = [];
+  renderPointInputs();
+  updateSelectedInfo();
+  showCalcPlaceholder();
+  hideCompTable();
+  redraw45();
+}
+
+function deletePoint(i) {
+  if (i < 3 || points.length <= 3) return;
+  points.splice(i, 1);
+  selectedPair = [];
+  triedPairs = [];
+  renderPointInputs();
+  updateSelectedInfo();
+  showCalcPlaceholder();
+  hideCompTable();
+  redraw45();
+}
+
+// ════════════════════════════════════════════════════════
+//  SELECTION STATE (tabs 4-5)
+// ════════════════════════════════════════════════════════
+function enterSelectMode() {
+  selectMode = true;
+  selectedPair = [];
+  const info = document.getElementById('selectedInfo');
+  info.style.display = '';
+  info.innerHTML = '첫 번째 점을 클릭하세요';
+  document.getElementById('btnDrawLine').classList.add('active');
+  redraw45();
+}
+
+function exitSelectMode() {
+  selectMode = false;
+  document.getElementById('selectedInfo').style.display = 'none';
+  document.getElementById('btnDrawLine').classList.remove('active');
+}
+
+function updateSelectedInfo() {
+  const el = document.getElementById('selectedInfo');
+  if (!el || !selectMode) return;
+
+  if (selectedPair.length === 0) {
+    el.innerHTML = '첫 번째 점을 클릭하세요';
+    return;
+  }
+
+  if (selectedPair.length === 1) {
+    const idx = selectedPair[0];
+    const label = POINT_LABELS[idx];
+    const color = POINT_COLORS[idx];
+    el.innerHTML = `<span style="color:${color};font-weight:bold;">점 ${label}</span> 선택됨 — 두 번째 점을 클릭하세요`;
+    return;
+  }
+
+  const i1 = selectedPair[0], i2 = selectedPair[1];
+  const l1 = POINT_LABELS[i1], l2 = POINT_LABELS[i2];
+  const c1 = POINT_COLORS[i1], c2 = POINT_COLORS[i2];
+  el.innerHTML = `<span style="color:${c1};font-weight:bold;">점 ${l1}</span>–<span style="color:${c2};font-weight:bold;">점 ${l2}</span> 직선`;
+}
+
+function handlePointClick(idx) {
+  if (!selectMode) return;
+
+  if (selectedPair.includes(idx)) {
+    selectedPair = selectedPair.filter(i => i !== idx);
+    updateSelectedInfo();
+    redraw45();
+    return;
+  }
+
+  if (selectedPair.length >= 2) {
+    selectedPair = [idx];
+    updateSelectedInfo();
+    redraw45();
+    return;
+  }
+
+  selectedPair.push(idx);
+  updateSelectedInfo();
+
+  if (selectedPair.length === 2) {
+    computeAndShowPair(selectedPair[0], selectedPair[1]);
+  }
+
+  redraw45();
+}
+
+function computeAndShowPair(i1, i2) {
+  const p1 = points[i1];
+  const p2 = points[i2];
+  const line = calcLine(p1, p2);
+
+  if (!line) {
+    document.getElementById('calcDisplay').innerHTML =
+      '<div class="placeholder">두 점의 x값이 같아 직선을 그을 수 없습니다.</div>';
+    return;
+  }
+
+  const label = POINT_LABELS[i1] + '\u2013' + POINT_LABELS[i2];
+  const sqErr = calcSquaredError(line, points);
+
+  const existIdx = triedPairs.findIndex(p =>
+    (p.i1 === i1 && p.i2 === i2) || (p.i1 === i2 && p.i2 === i1));
+  if (existIdx >= 0) {
+    triedPairs[existIdx] = { i1, i2, label, a: line.a, b: line.b, sqErr };
+  } else {
+    triedPairs.push({ i1, i2, label, a: line.a, b: line.b, sqErr });
+  }
+
+  const remainingPts = points.map((pt, i) => ({ pt, idx: i }))
+    .filter(({ idx }) => idx !== i1 && idx !== i2);
+
+  showCalc(i1, i2, p1, p2, line, remainingPts);
+  updateCompTable();
+  exitSelectMode();
+  redraw45();
+}
+
+// ════════════════════════════════════════════════════════
+//  MAIN DRAW DISPATCHER — TABS 4-5
+// ════════════════════════════════════════════════════════
+function redraw45() {
+  resizeCanvas45();
+  if (currentTab === 4) drawTab4();
+  else drawTab5(null);
+}
+
+function drawTab4() {
+  let extraA, extraB;
+  if (selectedPair.length === 2) {
+    const pair = triedPairs.find(p =>
+      (p.i1 === selectedPair[0] && p.i2 === selectedPair[1]) ||
+      (p.i1 === selectedPair[1] && p.i2 === selectedPair[0]));
+    if (pair) { extraA = pair.a; extraB = pair.b; }
+  }
+
+  const range = t45_calcAxisRange(points, extraA, extraB);
+  const grid = t45_drawBase(points, range);
+  lastGrid = grid;
+  const { toX, toY, xMin, xMax } = grid;
+
+  if (selectedPair.length === 2) {
+    const pair = triedPairs.find(p =>
+      (p.i1 === selectedPair[0] && p.i2 === selectedPair[1]) ||
+      (p.i1 === selectedPair[1] && p.i2 === selectedPair[0]));
+    if (pair) {
+      t45_drawLine(pair.a, pair.b, xMin, xMax, toX, toY, '#3b82f6', 2.5);
+      points.forEach((pt, i) => {
+        if (i !== selectedPair[0] && i !== selectedPair[1]) {
+          t45_drawErrorLine(pt, pair.a, pair.b, toX, toY, '#ef4444');
+        }
+      });
+    }
+  }
+
+  const labels = POINT_LABELS.slice(0, points.length);
+  t45_drawPoints(points, toX, toY, labels);
+}
+
+function drawTab5(lineParams) {
+  const pts = points;
+  const a = lineParams ? lineParams.a : null;
+  const b = lineParams ? lineParams.b : null;
+  const range = t45_calcAxisRange(pts, a, b);
+  const { toX, toY, xMin, xMax } = t45_drawBase(pts, range);
+
+  if (lineParams) {
+    t45_drawLine(lineParams.a, lineParams.b, xMin, xMax, toX, toY, '#f59e0b', 3);
+    pts.forEach(p => {
+      t45_drawErrorLine(p, lineParams.a, lineParams.b, toX, toY, '#ef4444');
+    });
+  }
+
+  const labels = POINT_LABELS.slice(0, pts.length);
+  t45_drawPoints(pts, toX, toY, labels);
+}
+
+// ════════════════════════════════════════════════════════
+//  DRAG / CLICK — INTERACTION (Tab 4)
+// ════════════════════════════════════════════════════════
+function canvasXY(e) {
+  const rect = canvas45.getBoundingClientRect();
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+function hitTestPoint(px, py) {
+  if (currentTab !== 4 || !lastGrid) return -1;
+  const hitR = 18;
+  for (let i = 0; i < points.length; i++) {
+    const sx = lastGrid.toX(points[i].x);
+    const sy = lastGrid.toY(points[i].y);
+    const dx = px - sx, dy = py - sy;
+    if (dx * dx + dy * dy <= hitR * hitR) return i;
+  }
+  return -1;
+}
+
+function snap05(v) { return Math.round(v * 2) / 2; }
+
+function syncPointInput(idx, x, y) {
+  points[idx].x = x;
+  points[idx].y = y;
+  const xEl = document.getElementById('px_' + idx);
+  const yEl = document.getElementById('py_' + idx);
+  if (xEl) xEl.value = x;
+  if (yEl) yEl.value = y;
+}
+
+function onPointMoved() {
+  selectedPair = [];
+  triedPairs = [];
+  updateSelectedInfo();
+  showCalcPlaceholder();
+  hideCompTable();
+  redraw45();
+}
+
+function onDragStart(e) {
+  const { x, y } = canvasXY(e);
+  dragStartPos = { x, y };
+  dragMoved = false;
+  dragIdx = hitTestPoint(x, y);
+  if (dragIdx >= 0) canvas45.style.cursor = 'grabbing';
+}
+
+function onDragMove(e) {
+  if (dragIdx < 0) {
+    const { x, y } = canvasXY(e);
+    const overPt = currentTab === 4 && hitTestPoint(x, y) >= 0;
+    canvas45.style.cursor = overPt ? (selectMode ? 'pointer' : 'grab') : '';
+    return;
+  }
+  const { x, y } = canvasXY(e);
+  if (!dragMoved && dragStartPos) {
+    const dx = x - dragStartPos.x, dy = y - dragStartPos.y;
+    if (dx * dx + dy * dy > 25) dragMoved = true;
+  }
+  if (!dragMoved) return;
+  if (!lastGrid) return;
+  const dataX = snap05(lastGrid.fromX(x));
+  const dataY = snap05(lastGrid.fromY(y));
+  syncPointInput(dragIdx, dataX, dataY);
+  onPointMoved();
+}
+
+function onDragEnd(e) {
+  if (dragIdx >= 0) {
+    if (!dragMoved) {
+      handlePointClick(dragIdx);
+    }
+    dragIdx = -1;
+    canvas45.style.cursor = '';
+  }
+  dragStartPos = null;
+  dragMoved = false;
+}
+
+function onTouchStart(e) {
+  if (currentTab !== 4) return;
+  const touch = e.touches[0];
+  const { x, y } = canvasXY(touch);
+  dragStartPos = { x, y };
+  dragMoved = false;
+  dragIdx = hitTestPoint(x, y);
+  if (dragIdx >= 0) e.preventDefault();
+}
+
+function onTouchMove(e) {
+  if (dragIdx < 0) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+  const { x, y } = canvasXY(touch);
+  if (!dragMoved && dragStartPos) {
+    const dx = x - dragStartPos.x, dy = y - dragStartPos.y;
+    if (dx * dx + dy * dy > 25) dragMoved = true;
+  }
+  if (!dragMoved) return;
+  if (!lastGrid) return;
+  const dataX = snap05(lastGrid.fromX(x));
+  const dataY = snap05(lastGrid.fromY(y));
+  syncPointInput(dragIdx, dataX, dataY);
+  onPointMoved();
+}
+
+function onTouchEnd(e) {
+  if (dragIdx >= 0) {
+    if (!dragMoved) {
+      handlePointClick(dragIdx);
+    }
+    dragIdx = -1;
+  }
+  dragStartPos = null;
+  dragMoved = false;
+}
+
+// ════════════════════════════════════════════════════════
+//  TAB 4 CALCULATION DISPLAY
+// ════════════════════════════════════════════════════════
+function showCalcPlaceholder() {
+  document.getElementById('calcDisplay').innerHTML =
+    '<div class="placeholder">그래프에서 두 점을 클릭하면 계산 과정이 나타납니다.</div>';
+}
+
+function hideCompTable() {
+  document.getElementById('compTableWrap').style.display = 'none';
+}
+
+function showCalc(i1, i2, p1, p2, line, remainingPts) {
+  const l1 = POINT_LABELS[i1], l2 = POINT_LABELS[i2];
+  const a = line.a, b = line.b;
+  const aFmt = fmt(a);
+  const bAbs = Math.abs(b);
+  const bSign = b >= 0 ? '+' : '\u2212';
+  const bFmt = fmt(bAbs);
+
+  const dy = p2.y - p1.y;
+  const dx = p2.x - p1.x;
+  const ax_val = fmt(a * p1.x);
+  const b_calc = fmt(b);
+
+  let errorRows = '';
+  let sqTerms = [];
+  remainingPts.forEach(({ pt, idx }) => {
+    const remLabel = POINT_LABELS[idx];
+    const predicted = a * pt.x + b;
+    const predFmt = fmt(predicted);
+    const diff = pt.y - predicted;
+    const err = Math.abs(diff);
+    const errFmt = fmt(err);
+    const sqVal = diff * diff;
+    sqTerms.push({ label: remLabel, err, sqVal });
+    errorRows += `
+      <br><strong>${remLabel}(${fmt(pt.x)}, ${fmt(pt.y)})</strong>:
+      직선 위의 값 = ${aFmt} × ${fmt(pt.x)} ${bSign} ${bFmt} = <span class="val">${predFmt}</span><br>
+      세로 거리 = ${fmt(pt.y)} − ${predFmt} = <span class="error-val">${fmt(diff)}</span>
+      &nbsp;→&nbsp; 제곱 = <span class="error-val">${fmt(sqVal)}</span>`;
+  });
+  const sqSum = sqTerms.reduce((s, t) => s + t.sqVal, 0);
+  const sqSumParts = sqTerms.map(t => fmt(t.sqVal)).join(' + ');
+  errorRows += `<br><br><strong>오차² 합 = ${sqSumParts} = <span class="result">${fmt(sqSum)}</span></strong>`;
+
+  const html = `
+  <div class="calc-step-45 highlight">
+    <div class="step-num">① 기울기 a 구하기</div>
+    <div class="step-content">
+      a = (y₂ − y₁) ÷ (x₂ − x₁)<br>
+      a = (<span class="val">${fmt(p2.y)}</span> − <span class="val">${fmt(p1.y)}</span>) ÷ (<span class="val">${fmt(p2.x)}</span> − <span class="val">${fmt(p1.x)}</span>)<br>
+      a = ${fmt(dy)} ÷ ${fmt(dx)} = <span class="result">${aFmt}</span>
+    </div>
+  </div>
+  <div class="calc-step-45">
+    <div class="step-num">② 시작 높이 b 구하기</div>
+    <div class="step-content">
+      ${l1}(${fmt(p1.x)}, ${fmt(p1.y)})을 대입: &nbsp;${fmt(p1.y)} = ${aFmt} × ${fmt(p1.x)} + b<br>
+      ${fmt(p1.y)} = ${ax_val} + b &nbsp;→&nbsp; b = <span class="result">${b_calc}</span>
+    </div>
+  </div>
+  <div class="calc-step-45">
+    <div class="step-num">③ 직선의 식</div>
+    <div class="step-content">
+      <span class="result">${fmtFormula(a, b)}</span>
+    </div>
+  </div>
+  <div class="calc-step-45" style="border-left-color:var(--danger);">
+    <div class="step-num">④ 나머지 점들의 세로 거리와 제곱 구하기</div>
+    <div class="step-content">${remainingPts.length > 0 ? errorRows : '(나머지 점 없음)'}
+    </div>
+  </div>`;
+
+  document.getElementById('calcDisplay').innerHTML = html;
+}
+
+function updateCompTable() {
+  if (triedPairs.length === 0) { hideCompTable(); return; }
+
+  let bestErr = Infinity;
+  triedPairs.forEach(p => { if (p.sqErr < bestErr) bestErr = p.sqErr; });
+
+  let rows = '';
+  triedPairs.forEach(p => {
+    const isBest = Math.abs(p.sqErr - bestErr) < 1e-9 && triedPairs.length > 1;
+    const isCurrent = selectedPair.length === 2 &&
+      ((p.i1 === selectedPair[0] && p.i2 === selectedPair[1]) ||
+       (p.i1 === selectedPair[1] && p.i2 === selectedPair[0]));
+    const cls = isBest ? 'best-row' : (isCurrent ? 'current-row' : '');
+    rows += `<tr class="${cls}">
+      <td>${p.label}</td>
+      <td>${fmtFormula(p.a, p.b)}</td>
+      <td>${fmt(p.sqErr)}</td>
+    </tr>`;
+  });
+
+  const wrap = document.getElementById('compTableWrap');
+  wrap.style.display = '';
+  wrap.innerHTML = `
+    <div class="comparison-title">조합별 비교</div>
+    <table class="comp">
+      <thead><tr><th>조합</th><th>직선의 식</th><th>오차² 합</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    ${triedPairs.length >= 2 ? `<div class="question-box">어떤 조합의 오차² 합이 가장 작을까? &nbsp; (초록색 행)</div>` : ''}
+  `;
+}
+
+// ════════════════════════════════════════════════════════
+//  ANIMATION (Tab 5)
+// ════════════════════════════════════════════════════════
+function easeInOut(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+function wanderNoise(t, freq, amp) {
+  const fade = Math.max(0, 1 - t * 1.5);
+  return amp * fade * Math.sin(freq * t * Math.PI * 2 + 1.3) * Math.cos(freq * 0.7 * t * Math.PI + 0.4);
+}
+
+function startAnimation(slow) {
+  if (animId) { cancelAnimationFrame(animId); animId = null; }
+
+  document.getElementById('resultBox').style.display = 'none';
+  document.getElementById('animPlaceholder').style.display = 'none';
+  document.getElementById('errorSumBox').style.display = '';
+  document.getElementById('errorSumValue').style.color = '#ef4444';
+
+  animSlow = slow;
+  animDuration = slow ? 10000 : 5000;
+
+  const pts = points;
+  const opt = calcLeastSquares(pts);
+  animOptA = opt.a;
+  animOptB = opt.b;
+
+  const seed = Math.random();
+  animStartA = animOptA + (seed < 0.5 ? 2 : -2) + (Math.random() - 0.5) * 3;
+  animStartB = animOptB + (Math.random() - 0.5) * 8;
+
+  document.getElementById('btnReplay').disabled = false;
+
+  animStartTime = null;
+  animId = requestAnimationFrame(animFrame);
+}
+
+function animFrame(timestamp) {
+  if (!animStartTime) animStartTime = timestamp;
+  const elapsed = timestamp - animStartTime;
+  let t = Math.min(elapsed / animDuration, 1);
+
+  const pts = points;
+
+  const noise_a = wanderNoise(t, 3, 1.5);
+  const noise_b = wanderNoise(t, 2, 4);
+
+  const te = easeInOut(t);
+  const curA = animStartA + (animOptA - animStartA) * te + noise_a;
+  const curB = animStartB + (animOptB - animStartB) * te + noise_b;
+
+  drawTab5({ a: curA, b: curB });
+
+  const errSum = calcSquaredError({ a: curA, b: curB }, pts);
+  const errDisplay = document.getElementById('errorSumValue');
+  errDisplay.textContent = fmt(errSum, 2);
+
+  const optErr = calcSquaredError({ a: animOptA, b: animOptB }, pts);
+  const maxErr = calcSquaredError({ a: animStartA, b: animStartB }, pts);
+  const ratio = (errSum - optErr) / Math.max(maxErr - optErr, 0.1);
+  const clampedRatio = Math.max(0, Math.min(1, ratio));
+  errDisplay.style.color = interpolateColor(clampedRatio);
+
+  document.getElementById('currentFormulaDisplay').textContent = fmtFormula(curA, curB);
+
+  if (t < 1) {
+    animId = requestAnimationFrame(animFrame);
+  } else {
+    drawTab5({ a: animOptA, b: animOptB });
+    document.getElementById('errorSumValue').textContent = fmt(calcSquaredError({ a: animOptA, b: animOptB }, pts), 2);
+    document.getElementById('errorSumValue').style.color = '#10b981';
+    document.getElementById('currentFormulaDisplay').textContent = fmtFormula(animOptA, animOptB);
+    animId = null;
+    showResult(pts);
+  }
+}
+
+function interpolateColor(ratio) {
+  if (ratio > 0.5) {
+    const t = (ratio - 0.5) * 2;
+    const r = 239, g = Math.round(68 + (158 - 68) * (1 - t)), b = 68;
+    return `rgb(${r},${g},${b})`;
+  } else {
+    const t = ratio * 2;
+    const r = Math.round(245 * t), g = Math.round(158 + (185 - 158) * (1 - t)), b2 = Math.round(11 * t + 129 * (1 - t));
+    return `rgb(${r},${g},${b2})`;
+  }
+}
+
+function showResult(pts) {
+  const resultBox = document.getElementById('resultBox');
+  resultBox.style.display = '';
+  resultBox.classList.add('flash-anim');
+  setTimeout(() => resultBox.classList.remove('flash-anim'), 800);
+
+  document.getElementById('resultFormula').textContent = `추세선의 식: ${fmtFormula(animOptA, animOptB)}`;
+
+  const trendSqErr = calcSquaredError({ a: animOptA, b: animOptB }, pts);
+
+  let rows = `<tr class="trend-row"><td>추세선</td><td>${fmtFormula(animOptA, animOptB)}</td><td>${fmt(trendSqErr)}</td></tr>`;
+
+  if (triedPairs.length > 0) {
+    triedPairs.forEach(p => {
+      const sqErr = calcSquaredError({ a: p.a, b: p.b }, pts);
+      rows += `<tr><td>${p.label} 직선</td><td>${fmtFormula(p.a, p.b)}</td><td>${fmt(sqErr)}</td></tr>`;
+    });
+  }
+
+  document.getElementById('resultCompare').innerHTML = `
+    <div style="font-size:13px;color:var(--muted);margin-bottom:8px;font-family:'Jua',sans-serif;">오차² 합 비교</div>
+    <table class="res-comp">
+      <thead><tr><th>직선</th><th>식</th><th>오차² 합</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div style="margin-top:10px;font-size:13px;color:var(--muted);font-family:'Jua',sans-serif;">
+      세로 거리를 <strong style="color:var(--accent);">제곱</strong>하면 음수가 사라져요.<br>
+      추세선은 이 <strong style="color:var(--accent3);">제곱 합이 가장 작은</strong> 직선입니다!
+    </div>
+  `;
+}
+
+// ════════════════════════════════════════════════════════
+//  URL PARAMS
+// ════════════════════════════════════════════════════════
+function parseURL() {
+  const p   = new URLSearchParams(location.search);
+  const tab = parseInt(p.get('step'));
+  if (tab >= 1 && tab <= 5) {
+    currentTab = tab;
+  }
+
+  // For tabs 4-5: parse points param
+  if (currentTab >= 4) {
+    const pStr = p.get('points');
+    if (pStr) {
+      const nums = pStr.split(',').map(Number);
+      if (nums.length >= 6 && nums.every(n => !isNaN(n))) {
+        const count = Math.min(Math.floor(nums.length / 2), 5);
+        points = [];
+        for (let i = 0; i < count; i++) {
+          points.push({ x: nums[i * 2], y: nums[i * 2 + 1] });
+        }
+      }
+    }
+  }
+
+  // For tabs 2-3: parse points param
+  const pts = p.get('points');
+  if (pts && currentTab <= 3) {
+    const v = pts.split(',').map(Number);
+    if (!v.some(isNaN)) {
+      if (currentTab === 2 && v.length >= 4) {
+        document.getElementById('t2x1').value = v[0];
+        document.getElementById('t2y1').value = v[1];
+        document.getElementById('t2x2').value = v[2];
+        document.getElementById('t2y2').value = v[3];
+      } else if (currentTab === 3 && v.length >= 6) {
+        document.getElementById('t3x1').value = v[0];
+        document.getElementById('t3y1').value = v[1];
+        document.getElementById('t3x2').value = v[2];
+        document.getElementById('t3y2').value = v[3];
+        document.getElementById('t3x3').value = v[4];
+        document.getElementById('t3y3').value = v[5];
+      }
+    }
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════
+function init() {
+  parseURL();
+  renderPointInputs();
+
+  // Resize handlers
+  window.addEventListener('resize', () => {
+    if (currentTab <= 3) { resizeCanvas13(); renderCanvas13(); }
+    else { resizeCanvas45(); redraw45(); }
+  });
+
+  // Canvas 45 events
+  canvas45.addEventListener('mousedown', onDragStart);
+  canvas45.addEventListener('mousemove', onDragMove);
+  canvas45.addEventListener('mouseup', onDragEnd);
+  canvas45.addEventListener('mouseleave', onDragEnd);
+  canvas45.addEventListener('touchstart', onTouchStart, { passive: false });
+  canvas45.addEventListener('touchmove', onTouchMove, { passive: false });
+  canvas45.addEventListener('touchend', onTouchEnd);
+  canvas45.addEventListener('touchcancel', onDragEnd);
+
+  // Switch to the correct tab (also triggers resize + render)
+  switchTab(currentTab);
+
+  // If tabs 1-3 also need an initial resize/render
+  if (currentTab <= 3) {
+    resizeCanvas13();
+    updateT1();
+    requestAnimationFrame(() => { resizeCanvas13(); renderCanvas13(); });
+  }
+}
+
+init();
+</script>
+</body>
+</html>
