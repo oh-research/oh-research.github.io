@@ -137,18 +137,13 @@
   #counter{ font-family:ui-monospace,"SF Mono","JetBrains Mono",monospace; font-size:14px;
     min-width:96px; text-align:center; color:var(--muted); }
   .spacer{ margin-left:auto; }
-
-  #selftest{ display:inline-block; margin-left:12px; padding:3px 9px; border-radius:999px;
-    font-size:11px; font-weight:700; vertical-align:middle; }
-  .st-ok{ background:#e6f7ed; color:#137a3e; }
-  .st-fail{ background:#fdeaea; color:#c0281f; }
 </style>
 </head>
 <body>
 <div id="app" data-mode="edit">
 
   <header class="topbar">
-    <div class="brand">경로탐색 뷰어 · Dijkstra<span id="selftest">self-test …</span></div>
+    <div class="brand">경로탐색 뷰어 · Dijkstra</div>
     <div class="tools">
       <label>예시
         <select id="selExample"></select>
@@ -749,9 +744,6 @@ function setBrush(b){
 
 // ===== INIT =====
 const chk = selfCheck();
-const badge = $('selftest');
-badge.textContent = chk.ok ? 'self-test ✓' : 'self-test ✗';
-badge.className = chk.ok ? 'st-ok' : 'st-fail';
 if (!chk.ok) console.error('SELFTEST FAIL:', chk.fails);
 else console.log('SELFTEST PASS');
 
