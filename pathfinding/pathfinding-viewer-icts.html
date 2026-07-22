@@ -1,0 +1,1113 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>ICTS 멀티 에이전트 뷰어</title>
+<style>
+  :root{
+    --bg:#ffffff; --panel:#f5f5f7; --ink:#1d1d1f; --muted:#86868b; --line:#e3e3e8;
+    --accent:#0071e3; --proc:#0071e3; --path:#22c55e; --bad:#e0533d;
+    --radius:14px; --shadow:0 6px 20px rgba(0,0,0,.08); --btn:#ffffff;
+    --wall:#5b6470; --cell:56px;
+  }
+  *{ box-sizing:border-box; user-select:none; }
+  input, select{ user-select:auto; }
+  body{ margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",Pretendard,"Noto Sans KR",sans-serif; }
+  button{ font:inherit; cursor:pointer; border:1px solid var(--line); background:var(--btn); color:var(--ink);
+    padding:8px 14px; border-radius:10px; transition:background .15s,box-shadow .15s,transform .05s; }
+  button:hover:not(:disabled){ background:var(--panel); }
+  button:active:not(:disabled){ transform:translateY(1px); }
+  button:disabled{ opacity:.4; cursor:default; }
+  select{ font:inherit; padding:6px 8px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+  label{ font-size:13px; color:var(--muted); display:inline-flex; align-items:center; gap:6px; }
+
+  /* 3열 폭은 손잡이(.splitter)를 끌어 조절한다. 예전 열 사이 1px gap이 하던 구분선 역할은
+     이제 손잡이가 대신하므로 gap은 0. 폭은 --railW/--rightW로만 바뀌고 가운데는 1fr. */
+  #app{ display:grid;
+    grid-template-columns:var(--railW,260px) 6px 1fr 6px var(--rightW,380px);
+    grid-template-rows:1fr; height:100vh; gap:0; background:#e5e7eb; }
+  .splitter{ background:#e5e7eb; cursor:col-resize; position:relative; }
+  .splitter::after{ content:''; position:absolute; top:0; bottom:0; left:2px; right:2px;
+    border-radius:2px; transition:background .12s; }
+  .splitter:hover::after, .splitter.dragging::after{ background:var(--accent); }
+  /* 가로 손잡이(오른쪽 열의 트리↕시간표) — 같은 부품을 눕힌 것 */
+  .splitter.horz{ cursor:row-resize; }
+  .splitter.horz::after{ top:2px; bottom:2px; left:0; right:0; }
+  /* 끄는 동안엔 어느 칸 위를 지나든 커서가 흔들리지 않게 한다 */
+  body.col-resizing, body.col-resizing *{ cursor:col-resize !important; }
+  body.row-resizing, body.row-resizing *{ cursor:row-resize !important; }
+  #procRail,#graphPane,#rightCol{ background:var(--bg); overflow:auto; }
+  #procRail{ padding:16px 18px; }
+  #graphPane{ display:flex; align-items:safe center; justify-content:safe center; padding:14px; }
+  /* 오른쪽 열도 트리↕시간표 높이를 손잡이로 조절한다. --ttH 기본값이 auto라 손대기 전까진
+     예전처럼 시간표가 제 내용만큼만 차지하고 트리(1fr)가 나머지를 먹는다. */
+  #rightCol{ display:grid; grid-template-rows:1fr auto 6px var(--ttH,auto); gap:0; background:#e5e7eb; }
+  #ictPane,#timetablePane{ background:var(--bg); overflow:auto; padding:10px; }
+  #candBar{ background:var(--bg); padding:0 10px; }
+  #candBar:empty{ padding:0; }
+
+  .brand{ font-weight:800; font-size:16px; letter-spacing:-.02em; margin:0 0 14px;
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+
+  .railhead{ margin:0 0 8px; font-size:13px; color:var(--muted); font-weight:700; }
+  ol.proc{ margin:0 0 16px; padding-left:0; list-style:none; counter-reset:p; }
+  ol.proc > li{ position:relative; padding:10px 12px 10px 40px; margin-bottom:6px; border-radius:10px;
+    line-height:1.5; color:#3a3a3c; counter-increment:p; background:var(--panel); }
+  ol.proc > li::before{ content:counter(p); position:absolute; left:10px; top:10px; width:22px; height:22px;
+    border-radius:50%; background:#e5e5ea; color:#6b6b70; font-size:12px; font-weight:700;
+    display:grid; place-items:center; }
+  ol.proc ul{ list-style:none; margin:8px 0 2px; padding:0; }
+  ol.proc ul li{ position:relative; padding:8px 12px 8px 26px; margin:4px 0 0; border-radius:8px;
+    color:#5a5a5e; line-height:1.5; background:transparent; }
+  ol.proc ul li::before{ content:''; position:absolute; left:12px; top:15px; width:6px; height:6px;
+    border-radius:50%; background:#c4c4c9; }
+
+  /* ---------- 컨트롤 레일: 성격별 3섹션(재생 / 문제 / 에이전트) ----------
+     예전엔 컨트롤 9개가 한 덩어리 flex-wrap이라 줄바꿈이 의미가 아니라 픽셀 폭으로 정해졌다
+     (가로·세로가 갈라지고 편집 전용 컨트롤이 재생 컨트롤 사이에 끼는 원인). 이제 섹션마다
+     .railhead를 두고(레일의 「에이전트」와 같은 관용구), 줄은 .ctlrow 단위로만 나눈다. */
+  .ctlsec{ margin-bottom:18px; }
+  .ctlrow{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:8px; }
+  .ctlrow:last-child{ margin-bottom:0; }
+  /* 발표 중 가장 많이 쓰는 두 버튼 = 반반 크게, 시간축대로 ◀ 왼쪽 · ▶ 오른쪽 */
+  .stepbar{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+  .stepbar button{ padding:11px 0; font-weight:700; }
+  #preset, #bGridEdit{ width:100%; }
+  .ctlrow input[type=number]{ font:inherit; width:56px; padding:5px 7px;
+    border:1px solid var(--line); border-radius:8px; }
+  /* 자동 = 토글. 켜져 있음을 눌린 색으로 드러낸다(예전엔 스텝 버튼과 구분이 없었다). */
+  #bAuto[aria-pressed="true"]{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  #bAuto[aria-pressed="true"]:hover{ background:var(--accent); }
+  /* 편집 전용 컨트롤은 편집 모드에서만 존재한다(평소엔 죽은 회색 버튼으로 자리만 먹었다). */
+  #editOnly{ margin-top:10px; padding-top:10px; border-top:1px solid var(--line); }
+  #app:not([data-editing="1"]) #editOnly{ display:none; }
+  #agentEditor{ font-size:12px; color:var(--muted); }
+
+  /* ICT 트리는 **원래 크기(1 user unit = 1px)로 그리고 넘치면 #ictPane이 스크롤**한다.
+     예전엔 width:100%/height:auto라 viewBox가 커질수록 그림 전체가 열 폭에 맞춰 축소됐다
+     (노드 165개 = viewBox 5030px → 배율 0.07 → 칩 5×3px·글자 0.9px로 뭉개짐. 게다가 SVG가
+     squeeze되니 넘치는 게 없어 overflow:auto가 무용지물이었다). 크기는 renderICT가 width/height
+     속성으로 직접 박는다. */
+  #ictSvg{ display:block; }
+
+  /* ---------- 격자(그리드) 캔버스(형제 뷰어 계승) ---------- */
+  #grid{ display:grid; grid-template-columns:repeat(var(--cols,5), var(--cell)); grid-auto-rows:var(--cell);
+    gap:4px; user-select:none; }
+  .gcell{ position:relative; border-radius:10px; background:#eef0f3; box-shadow:0 2px 6px rgba(0,0,0,.05); }
+  .gcell.wall{ background:var(--wall);
+    background-image:repeating-linear-gradient(45deg,transparent 0 6px,rgba(0,0,0,.16) 6px 12px); }
+  .glabel{ position:absolute; top:3px; left:6px; font-size:10px; color:#9aa3af; font-weight:600;
+    pointer-events:none; }
+  .amark{ position:absolute; width:26%; height:26%; border-radius:50%; pointer-events:auto; cursor:grab; box-sizing:border-box; }
+  #grid.dragging-marker .amark{ cursor:grabbing; }
+  .amark.astart{ right:4px; top:4px; }
+  .amark.agoal{ left:4px; bottom:4px; background:#fff; border-width:3px; border-style:solid; }
+  .robot{ position:absolute; width:56%; height:56%; left:22%; top:22%; border-radius:50%;
+    border:2px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,.3); pointer-events:none; box-sizing:border-box; }
+  .gcell.conflict-pulse{ outline:4px solid var(--bad); outline-offset:-2px; z-index:2; }
+  #app[data-editing="1"] #grid{ cursor:crosshair; }
+
+  .badge-bad{ color:var(--bad); font-weight:700; }
+  .badge-ok{ color:var(--path); font-weight:700; }
+  /* 시간표도 같은 함정을 갖고 있었다: width:100%면 시간축이 길어질수록 칸이 뭉개진다.
+     칸마다 최소폭을 주고 넘치면 #timetablePane이 가로로 스크롤하게 한다. */
+  .tt{ border-collapse:collapse; min-width:100%; margin-bottom:6px; }
+  .tt td,.tt th{ border:1px solid #e5e7eb; padding:3px 7px; text-align:center; font-size:12px;
+    min-width:44px; white-space:nowrap; }
+  .cell-bad{ background:#fdeceb; color:var(--bad); font-weight:700; }
+
+  @keyframes conflictPulse{ 0%,100%{ opacity:1; } 50%{ opacity:.15; } }
+  .conflict-pulse{ animation:conflictPulse 1s ease-in-out infinite; }
+  .conflict-pulse.hot{ animation-duration:.45s; }
+
+  .candbar{ display:flex; align-items:center; gap:10px; padding:6px 10px; margin:8px 0;
+    background:var(--panel); border-radius:8px; font-size:13px; }
+  .candbar button{ padding:3px 10px; }
+
+  .agent-row{ display:flex; align-items:center; gap:6px; margin:6px 0; font-size:12px; flex-wrap:wrap; }
+  .agent-row .dot{ width:10px; height:10px; border-radius:50%; display:inline-block; flex:none; }
+  .agent-row .aid{ font-weight:700; width:20px; }
+  .agent-row .aslot{ color:var(--muted); }
+  .agent-row button{ padding:3px 8px; font-size:11px; }
+  .pending-hint{ font-size:12px; color:var(--accent); font-weight:700; margin:4px 0; }
+  .warn-box{ font-size:12px; color:var(--bad); font-weight:700; margin:6px 0 14px;
+    padding:8px 12px; background:#fdeceb; border-radius:8px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="procRail">
+    <div class="brand">ICTS 멀티 에이전트 뷰어</div>
+    <h2 class="railhead">ICTS 절차</h2>
+    <div id="proc"></div>
+    <div id="playControls"></div>
+    <div id="capBox"></div>
+    <div id="problemControls"></div>
+    <div id="warnBox"></div>
+    <div id="agentEditor"></div>
+  </div>
+  <div class="splitter" data-split="rail" title="드래그해 폭 조절 · 더블클릭하면 기본값"></div>
+  <div id="graphPane"><div id="grid"></div></div>
+  <div class="splitter" data-split="right" title="드래그해 폭 조절 · 더블클릭하면 기본값"></div>
+  <div id="rightCol">
+    <div id="ictPane"><svg id="ictSvg"></svg></div>
+    <div id="candBar"></div>
+    <div class="splitter horz" data-split="tt" title="드래그해 높이 조절 · 더블클릭하면 기본값"></div>
+    <div id="timetablePane"></div>
+  </div>
+</div>
+<script>
+/*__ICTS_ENGINE_START__*/
+function buildAdj(graph){
+  const adj = new Map();
+  for(const n of graph.nodes) adj.set(n.id, []);
+  for(const [a,b] of graph.edges){ adj.get(a).push(b); adj.get(b).push(a); }
+  for(const [,v] of adj) v.sort();
+  return adj;
+}
+function bfsDist(adj, src){
+  const dist = new Map([[src,0]]);
+  const q=[src];
+  while(q.length){ const u=q.shift();
+    for(const v of adj.get(u)) if(!dist.has(v)){ dist.set(v, dist.get(u)+1); q.push(v); } }
+  return dist;
+}
+function optCosts(scn){
+  const adj = buildAdj(scn.graph);
+  return scn.agents.map(a => {
+    const d = bfsDist(adj, a.start);
+    if(!d.has(a.goal)) throw new Error('unreachable goal '+a.id);
+    return d.get(a.goal);
+  });
+}
+function buildMDD(adj, start, goal, cost){
+  const f=[new Set([start])];
+  for(let t=1;t<=cost;t++){ const s=new Set();
+    for(const v of f[t-1]){ s.add(v); for(const w of adj.get(v)) s.add(w); } f.push(s); }
+  const b=[new Set([goal])];
+  for(let k=1;k<=cost;k++){ const s=new Set();
+    for(const v of b[k-1]){ s.add(v); for(const w of adj.get(v)) s.add(w); } b.push(s); }
+  const levels=[];
+  for(let t=0;t<=cost;t++){ const s=new Set();
+    for(const v of f[t]) if(b[cost-t].has(v)){
+      if(v===goal && t<cost) continue;   // goal은 t=cost에만
+      s.add(v);
+    } levels.push(s); }
+  const succ=new Map();
+  for(let t=0;t<cost;t++){ for(const v of levels[t]){ const outs=[];
+    if(levels[t+1].has(v)) outs.push(v);              // 대기
+    for(const w of adj.get(v)) if(levels[t+1].has(w)) outs.push(w);
+    outs.sort(); succ.set(v+'@'+t, outs); } }
+  return {cost, start, goal, levels, succ};
+}
+function enumeratePaths(mdd, cap=200){
+  const {cost, start, succ}=mdd; const out=[]; const path=[start];
+  (function dfs(v,t){
+    if(out.length>=cap) return;
+    if(t===cost){ if(v===mdd.goal) out.push(path.slice()); return; }
+    for(const w of (succ.get(v+'@'+t)||[])){ path.push(w); dfs(w,t+1); path.pop(); }
+  })(start,0);
+  return out;
+}
+function pad(path, horizon){
+  const p=path.slice();
+  while(p.length < horizon+1) p.push(p[p.length-1]);
+  return p;
+}
+function firstConflict(pA, pB){
+  const H = Math.min(pA.length, pB.length) - 1;
+  for(let t=0;t<=H;t++){
+    if(pA[t]===pB[t]) return {t, type:'vertex', node:pA[t]};
+    if(t<H && pA[t]===pB[t+1] && pA[t+1]===pB[t]) return {t, type:'edge', nodes:[pA[t],pA[t+1]]};
+  }
+  return null;
+}
+function lowLevel(scn, costVec){
+  const adj = buildAdj(scn.graph);
+  const horizon = Math.max(...costVec);
+  const mdds = scn.agents.map((a,i)=>buildMDD(adj, a.start, a.goal, costVec[i]));
+  const pathsPer = mdds.map(m=>enumeratePaths(m));
+  if(pathsPer.some(ps=>ps.length===0)) return {feasible:false, sample:null, conflict:null};
+  // 결합 DFS + 쌍별 가지치기
+  const chosen=[]; let solution=null;
+  (function dfs(i){
+    if(solution) return;
+    if(i===scn.agents.length){ solution = chosen.map(p=>p.slice()); return; }
+    for(const raw of pathsPer[i]){
+      const p = pad(raw, horizon); let ok=true;
+      for(let j=0;j<i;j++){ if(firstConflict(p, chosen[j])){ ok=false; break; } }
+      if(ok){ chosen.push(p); dfs(i+1); chosen.pop(); if(solution) return; }
+    }
+  })(0);
+  if(solution) return {feasible:true, plan:solution};
+  // 불가: 대표 배정 + 최초 충돌
+  const sample = pathsPer.map(ps=>pad(ps[0], horizon));
+  let conflict=null;
+  outer: for(let a=0;a<sample.length;a++) for(let b=a+1;b<sample.length;b++){
+    const c = firstConflict(sample[a], sample[b]);
+    if(c){ conflict={agents:[a,b], ...c}; break outer; }
+  }
+  return {feasible:false, sample, conflict};
+}
+function cmpVec(a,b){ for(let i=0;i<a.length;i++){ if(a[i]!==b[i]) return a[i]-b[i]; } return 0; }
+function highLevel(scn, opts={}){
+  const maxDepth = opts.maxDepth ?? 8;
+  const opt = optCosts(scn);
+  const capTotal = opt.reduce((x,y)=>x+y,0) + maxDepth;
+  const key = v => v.join(',');
+  const nodes = new Map(); const gen = new Set(); let idc=0;
+  const addNode = (cv, parentId) => {
+    const id='n'+(idc++);
+    const rec={id, costVec:cv.slice(), total:cv.reduce((a,b)=>a+b,0), parentId, state:'frontier'};
+    nodes.set(id, rec); gen.add(key(cv)); return rec;
+  };
+  const trace=[]; const visited=new Set();
+  const root = addNode(opt, null);
+  trace.push({type:'root', id:root.id, costVec:root.costVec, total:root.total});
+  const pq=[root]; let solution=null, status='capExceeded';
+  while(pq.length){
+    pq.sort((a,b)=> a.total-b.total || cmpVec(a.costVec,b.costVec));
+    const cur = pq.shift();
+    if(visited.has(key(cur.costVec))) continue;
+    visited.add(key(cur.costVec));
+    if(cur.total > capTotal){ status='capExceeded'; break; }
+    const low = lowLevel(scn, cur.costVec);
+    cur.state = low.feasible ? 'solution' : 'conflict';
+    trace.push({type:'visit', id:cur.id, costVec:cur.costVec, total:cur.total, feasible:low.feasible, low});
+    if(low.feasible){ solution={costVec:cur.costVec, total:cur.total, plan:low.plan}; status='solved';
+      trace.push({type:'solved', id:cur.id}); break; }
+    const kids=[];
+    for(let i=0;i<cur.costVec.length;i++){
+      const cv=cur.costVec.slice(); cv[i]+=1;
+      if(cv.reduce((a,b)=>a+b,0) > capTotal) continue;
+      if(gen.has(key(cv))) continue;
+      const rec=addNode(cv, cur.id); pq.push(rec); kids.push({id:rec.id, costVec:rec.costVec});
+    }
+    if(kids.length) trace.push({type:'expand', parentId:cur.id, children:kids});
+  }
+  return {trace, nodes:[...nodes.values()], solution, status, opt};
+}
+function lowLevelCandidates(scn, costVec, cap=12){
+  const adj=buildAdj(scn.graph); const H=Math.max(...costVec);
+  const per=scn.agents.map((a,i)=>enumeratePaths(buildMDD(adj,a.start,a.goal,costVec[i])).map(p=>pad(p,H)));
+  const total=per.reduce((n,ps)=>n*ps.length,1);
+  const samples=[]; const idx=per.map(()=>0);
+  const combos=Math.min(total,cap);
+  for(let c=0;c<combos;c++){
+    const asg=per.map((ps,i)=>ps[idx[i]]);
+    let conflict=null;
+    outer: for(let a=0;a<asg.length;a++) for(let b=a+1;b<asg.length;b++){
+      const cc=firstConflict(asg[a],asg[b]); if(cc){conflict={agents:[a,b],...cc};break outer;} }
+    samples.push({asg, conflict});
+    for(let k=per.length-1;k>=0;k--){ if(++idx[k]<per[k].length) break; idx[k]=0; }
+  }
+  return {count:total, samples};
+}
+/*__ICTS_ENGINE_END__*/
+
+/* ============================================================
+   UI 블록 — ENGINE 마커 밖. ENGINE 함수는 같은 <script> 스코프라
+   직접 호출 가능(정의 위치와 무관하게 함수 선언은 호이스팅됨).
+   ============================================================ */
+
+/* ---------- Task 7: 절차문 + self-test 훅 ---------- */
+function renderProcedure(){
+  document.getElementById('proc').innerHTML =
+   `<ol class="proc"><li>각자 최단 비용을 구한다</li>
+     <li>시간표로 충돌을 찾는다</li>
+     <li>충돌이면 총비용을 한 단계씩 올린다
+       <ul><li>이 비용으로 충돌 없는 배정이 있나?</li><li>없으면 다음 노드로</li></ul></li>
+     <li>충돌 없는 조합 = 해</li></ol>`;
+}
+window.__SELFTEST = function(scn){
+  const hl = highLevel(scn);
+  console.assert(hl.solution, 'self-test: 해 존재');
+  return hl;
+};
+renderProcedure();
+
+/* ---------- Task 8: 격자(그리드) 모델 파생 + 렌더(형제 뷰어 계승) ---------- */
+// gridToScenario: 격자 {cols,rows,walls:Set("x,y"),labels:{"x,y":"A"},agents:[{start:[x,y],goal:[x,y],color}]}
+// 를 ENGINE이 소비하는 시나리오 {graph:{nodes,edges}, agents:[{id,start,goal,color}]} 로 파생한다.
+// 열린 칸(벽 아님) = 노드, 4-이웃 열린 칸 쌍 = 간선. 노드 id는 항상 "x,y" 좌표 문자열.
+function gridToScenario(grid){
+  const nodes=[]; const open=new Set();
+  for(let y=0;y<grid.rows;y++){
+    for(let x=0;x<grid.cols;x++){
+      const key=x+','+y;
+      if(grid.walls.has(key)) continue;
+      open.add(key);
+      nodes.push({id:key, x, y, label:(grid.labels&&grid.labels[key]) || `(${x},${y})`});
+    }
+  }
+  const edges=[];
+  for(const key of open){
+    const [x,y]=key.split(',').map(Number);
+    const rightKey=(x+1)+','+y; if(open.has(rightKey)) edges.push([key,rightKey]);
+    const upKey=x+','+(y+1); if(open.has(upKey)) edges.push([key,upKey]);
+  }
+  const agents=grid.agents.map((a,i)=>({
+    id:'a'+(i+1), start:a.start.join(','), goal:a.goal.join(','), color:a.color,
+  }));
+  return {graph:{nodes, edges}, agents};
+}
+function sizeGridCells(g){
+  const pane=document.getElementById('graphPane');
+  const availW=Math.max(60, pane.clientWidth-30), availH=Math.max(60, pane.clientHeight-30);
+  // #grid는 gap:4px로 칸 사이를 띄운다(CSS 참조). 칸 크기를 available폭/cols 로만 잡으면
+  // (cols-1)*4px(간격 합)를 빠뜨려 실제 렌더 폭이 available보다 커지고, 격자가 graphPane을
+  // 넘쳐 커서로 닿을 수 없는 칸이 생긴다(격자 편집 중 드래그가 목표 칸까지 닿지 않는 버그의 근본 원인).
+  // 따라서 간격을 먼저 빼고 남는 폭/높이를 cols/rows로 나눠야 실제 렌더 폭이 available 이하가 된다.
+  const GAP=4;
+  const cellW=(availW-(g.cols-1)*GAP)/g.cols, cellH=(availH-(g.rows-1)*GAP)/g.rows;
+  const cell=Math.max(28, Math.min(78, Math.floor(Math.min(cellW, cellH))));
+  const wrap=document.getElementById('grid');
+  wrap.style.setProperty('--cell', cell+'px');
+  wrap.style.setProperty('--cols', g.cols);
+}
+// renderGridScene: g=격자 모델(DRAFT 편집 중이거나 CURRENT). opts.agentsAt(인덱스별 현재 노드id 배열)가
+// 있으면 재생 중 로봇 원을 그 칸에 겹쳐 그린다. 출발(원)·목표(고리) 마커는 항상 그린다.
+// 셀 비용 숫자·경로 retrace(실타래·화살표)는 그리지 않는다(spec §4.2).
+function renderGridScene(g, opts={}){
+  const { agentsAt, conflict, atConflictTime } = opts;
+  sizeGridCells(g);
+  let html='';
+  for(let row=0; row<g.rows; row++){
+    const y=g.rows-1-row; // y 위로(상단이 큰 y), 좌하단 원점
+    for(let x=0;x<g.cols;x++){
+      const key=x+','+y;
+      const isWall=g.walls.has(key);
+      let inner='';
+      if(!isWall) inner += `<span class="glabel">${(g.labels&&g.labels[key]) || `(${x},${y})`}</span>`;
+      const starts=[], goals=[];
+      g.agents.forEach((a,i)=>{
+        if(a.start[0]===x && a.start[1]===y) starts.push(a);
+        if(a.goal[0]===x && a.goal[1]===y) goals.push(a);
+      });
+      starts.forEach((a,k)=>{ inner+=`<span class="amark astart" style="background:${a.color};top:${4+k*13}px"></span>`; });
+      goals.forEach((a,k)=>{ inner+=`<span class="amark agoal" style="border-color:${a.color};bottom:${4+k*13}px"></span>`; });
+      if(agentsAt){
+        const here=[];
+        g.agents.forEach((a,i)=>{ if(agentsAt[i]===key) here.push(a); });
+        here.forEach((a,k)=>{ const dx=(k-(here.length-1)/2)*16;
+          inner+=`<span class="robot" style="background:${a.color};transform:translateX(${dx}px)"></span>`; });
+      }
+      let cls='gcell '+(isWall?'wall':'open');
+      if(conflict){
+        const hit = conflict.type==='vertex' ? conflict.node===key
+                  : (conflict.type==='edge' && conflict.nodes.includes(key));
+        if(hit) cls += ' conflict-pulse'+(atConflictTime?' hot':'');
+      }
+      html += `<div class="${cls}" data-x="${x}" data-y="${y}">${inner}</div>`;
+    }
+  }
+  document.getElementById('grid').innerHTML = html;
+}
+function renderEditGrid(){ renderGridScene(DRAFT, {}); }
+
+/* ---------- Task 9: ICT 트리 렌더 ---------- */
+function renderICT(nodes, revealed, currentId, visitedSoFar){
+  const svg=document.getElementById('ictSvg');
+  // 요구사항 3: 진행형 reveal로 필터링하지 않고 탐색된 전체 트리(P.hl.nodes)를 항상 보여준다.
+  // 색은 여전히 visitedSoFar가 결정하므로(아래), 클릭 전까지는 회색(frontier)으로만 보인다.
+  const shown=nodes;
+  const byTotal=new Map();
+  for(const n of shown){ (byTotal.get(n.total)||byTotal.set(n.total,[]).get(n.total)).push(n); }
+  const totals=[...byTotal.keys()].sort((a,b)=>a-b);
+  const pos=new Map(); const RY=70, CW=110;
+  totals.forEach((tt,row)=>{ const arr=byTotal.get(tt).sort((a,b)=>cmpVec(a.costVec,b.costVec));
+    arr.forEach((n,ci)=>pos.set(n.id,{x:40+ci*CW, y:36+row*RY})); });
+  let s='';
+  for(const n of shown){ if(n.parentId && pos.has(n.parentId)){
+    const p=pos.get(n.parentId),q=pos.get(n.id);
+    s+=`<line x1=${p.x} y1=${p.y} x2=${q.x} y2=${q.y} stroke="#c4c9d2" stroke-width="2"/>`; } }
+  for(const n of shown){ const p=pos.get(n.id);
+    const disp = (visitedSoFar && visitedSoFar.has(n.id)) ? n.state : 'frontier';
+    const fill = disp==='solution' ? '#e7f6ec' : disp==='conflict' ? '#fdeceb' : '#f1f3f5';
+    const stroke = disp==='solution' ? 'var(--path)' : disp==='conflict' ? 'var(--bad)' : '#aeb4bd';
+    const sw = n.id===currentId ? 4 : 2;
+    s+=`<g class="ictnode" data-id="${n.id}" style="cursor:pointer">
+      <rect x=${p.x-38} y=${p.y-18} width="76" height="36" rx="8" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>
+      <text x=${p.x} y=${p.y-2} text-anchor="middle" font-size="13" font-weight="700">(${n.costVec.join(',')})</text>
+      <text x=${p.x} y=${p.y+13} text-anchor="middle" font-size="10" fill="#6b7280">총 ${n.total}</text></g>`; }
+  // 트리를 **원래 크기 그대로** 그린다(축소 금지). 칸 크기가 고정이라 노드가 몇 개든 칩·글자
+  // 크기가 그대로고, 넘치는 만큼 #ictPane이 스크롤한다. 폭·높이는 실제 칩 바깥선에 맞춰 잡아
+  // 쓸데없는 빈 스크롤 영역이 생기지 않게 한다(칩 반폭 38·반높이 18 + 여백 12).
+  const maxRow=Math.max(...totals.map(t=>byTotal.get(t).length));
+  const vbW=Math.max(300, 90+(maxRow-1)*CW), vbH=Math.max(120, 66+(totals.length-1)*RY);
+  svg.setAttribute('viewBox',`0 0 ${vbW} ${vbH}`);
+  svg.setAttribute('width', vbW); svg.setAttribute('height', vbH);
+  svg.innerHTML=s;
+  svg.querySelectorAll('.ictnode').forEach(g=>g.onclick=()=>window.onIctNodeClick?.(g.dataset.id));
+  scrollCurrentIntoView(pos.get(currentId));
+}
+// 스크롤이 실제로 생기면서, ▶로 케이스를 넘겼을 때 지금 노드가 화면 밖일 수 있게 됐다.
+// 보이지 않을 때만 가운데로 끌어온다(보일 땐 건드리지 않아 화면이 덜컹거리지 않는다).
+function scrollCurrentIntoView(p){
+  const pane=document.getElementById('ictPane'); if(!pane||!p) return;
+  const M=60; // 칩 반지름 + 여유
+  const l=pane.scrollLeft, t=pane.scrollTop, w=pane.clientWidth, h=pane.clientHeight;
+  if(p.x-M < l || p.x+M > l+w) pane.scrollLeft = Math.max(0, p.x - w/2);
+  if(p.y-M < t || p.y+M > t+h) pane.scrollTop  = Math.max(0, p.y - h/2);
+}
+
+/* ---------- Task 10: 시간표 렌더 ---------- */
+// 노드 id는 항상 "x,y" 좌표 문자열(gridToScenario 파생). 표시는 label(letter 또는 좌표)로 한다.
+function renderTimetable(scn, asg, conflict, upto=Infinity){
+  const N=new Map(scn.graph.nodes.map(n=>[n.id,n]));
+  const lbl=(id)=> (N.get(id)||{}).label ?? id;
+  const H=Math.max(...asg.map(p=>p.length))-1;
+  let head='<th></th>'; for(let t=0;t<=H;t++) head+=`<th>t${t}</th>`;
+  let rows='';
+  scn.agents.forEach((a,i)=>{ let r=`<th style="color:${a.color}">${a.id}</th>`;
+    const path=asg[i]; // 방어: 경로가 없는 에이전트(개수 불일치)는 출발 노드로 대체, 던지지 않음
+    for(let t=0;t<=H;t++){ const v = path ? path[Math.min(t,path.length-1)] : a.start;
+      const bad = path && conflict && conflict.agents.includes(i) && t===conflict.t
+        && (conflict.type==='vertex' ? v===conflict.node : conflict.nodes?.includes(v));
+      const dim = t>upto ? ' style="opacity:.35"' : '';
+      r+=`<td class="${bad?'cell-bad':''}"${dim}>${lbl(v)}</td>`; }
+    rows+=`<tr>${r}</tr>`; });
+  const cap = conflict
+    ? `<div class="badge-bad">충돌: ${conflict.type==='vertex'?'정점':'간선'} @ t${conflict.t}</div>
+       <div class="badge-bad">이 비용으론 충돌 없는 배정 없음(불가)</div>`
+    : `<div class="badge-ok">충돌 없음</div>`;
+  document.getElementById('timetablePane').innerHTML =
+    `<table class="tt"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>${cap}`;
+}
+
+/* ---------- 시나리오 유효성 검사 + 경고 표시(편집 중 도달 불가 방어) ---------- */
+// scenarioReachable: 순수 헬퍼, UI 쪽 코드(ENGINE 블록 아님). buildAdj/bfsDist는 ENGINE 전역을 그대로 호출.
+function scenarioReachable(scn){
+  if(!scn.agents || scn.agents.length<1) return {ok:false};
+  const adj = buildAdj(scn.graph);
+  for(const a of scn.agents){
+    if(!adj.has(a.start) || !adj.has(a.goal)) return {ok:false, badAgent:a.id};
+    const d = bfsDist(adj, a.start);
+    if(!d.has(a.goal)) return {ok:false, badAgent:a.id};
+  }
+  return {ok:true};
+}
+const UNREACHABLE_MSG = '출발과 목표가 이어지지 않은 로봇이 있습니다. 연결을 확인하세요.';
+function setWarning(msg){
+  const el=document.getElementById('warnBox'); if(!el) return;
+  el.innerHTML = `<div class="warn-box">${msg}</div>`;
+}
+function clearWarning(){
+  const el=document.getElementById('warnBox'); if(el) el.innerHTML='';
+}
+
+/* ---------- 해 없음/한도 초과 표시(spec §3.1). 도달 불가 경고(warnBox)와는 별개 박스(capBox). ---------- */
+const CAP_EXCEEDED_MSG = '해 없음 또는 한도 초과';
+function setCapWarning(msg){
+  const el=document.getElementById('capBox'); if(!el) return;
+  el.innerHTML = `<div class="warn-box">${msg}</div>`;
+}
+function clearCapWarning(){
+  const el=document.getElementById('capBox'); if(el) el.innerHTML='';
+}
+
+/* ---------- Task 11: 트레이스 재생 컨트롤러 ---------- */
+const TICK_MS=300; // 자동재생·단일 노드 애니메이션 공통 한 스텝 간격(0.3초)
+let PLAYER=null;
+// scn이 도달 불가 상태면 엔진을 돌리지 않고 경고만 띄운 채 이전 상태를 유지한다.
+// highLevel/optCosts가 예상 밖으로 던지는 경우에 대비해 try/catch를 백스톱으로 둔다.
+function loadScenario(scn){
+  const chk = scenarioReachable(scn);
+  if(!chk.ok){ setWarning(UNREACHABLE_MSG); return false; }
+  try{
+    const hl=highLevel(scn);
+    PLAYER={scn, hl, i:0, revealed:new Set(), current:null, subData:null, visitedSoFar:new Set(), timer:null, autoplaying:false};
+    // 요구사항 5: 루트 노드(첫 visit 이벤트)를 클릭된 것처럼 자동 선택해 t=0부터 애니메이션 재생.
+    // 캔버스가 빈 채로 남지 않도록 한다.
+    const rootVisit = hl.trace.find(e=>e.type==='visit');
+    if(rootVisit) onIctNodeClick(rootVisit.id, {play:false});
+    clearWarning();
+    return true;
+  }catch(err){
+    console.error(err);
+    setWarning(UNREACHABLE_MSG);
+    return false;
+  }
+}
+function applyEvent(ev){
+  const P=PLAYER;
+  if(ev.type==='root'){
+    P.revealed.add(ev.id);
+  } else if(ev.type==='expand'){
+    ev.children.forEach(c=>P.revealed.add(c.id));
+  } else if(ev.type==='visit'){
+    P.revealed.add(ev.id); P.current=ev.id; P.visitedSoFar.add(ev.id);
+    const asg = ev.feasible ? ev.low.plan : (ev.low.sample||[]);
+    P.subData = {asg, conflict: ev.feasible?null:ev.low.conflict, H: asg.length? Math.max(...asg.map(p=>p.length))-1:0, t:0,
+      feasible: ev.feasible, costVec: ev.costVec, k:0, _cand:null};
+  } else if(ev.type==='solved'){ P.current=ev.id; }
+}
+// 인덱스 0..upto 까지 트레이스를 처음부터 재생해 revealed/current/subData/visitedSoFar 를
+// 정확히 그 시점 상태로 재구성한다(stepBack/onIctNodeClick 공용).
+function reconstruct(upto){
+  const P=PLAYER;
+  P.revealed=new Set(); P.current=null; P.subData=null; P.visitedSoFar=new Set();
+  for(let k=0;k<=upto;k++) applyEvent(P.hl.trace[k]);
+}
+/* ---------- 케이스(= 처리된 ICT 노드 하나 = 그 비용 조합의 MDD 결합탐색) 사이 이동 ----------
+   ▶◀는 기본적으로 시간(t)만 움직이지만, 그 케이스의 경계(끝 H / 처음 0)에서 한 번 더 누르면
+   탐색 순서상 이웃한 케이스로 넘어간다. 트리 클릭으로 아무 노드나 고르는 길은 그대로 유지된다. */
+// 트레이스에서 visit 이벤트(= 실제로 처리된 케이스)의 인덱스 목록.
+function visitIdxList(){
+  const P=PLAYER; const out=[];
+  if(P) P.hl.trace.forEach((e,i)=>{ if(e.type==='visit') out.push(i); });
+  return out;
+}
+// 지금 보고 있는 노드가 그 목록의 몇 번째인지. 트레이스에 없는 프론티어 노드(selectUnvisitedTreeNode로
+// 고른 노드)면 탐색 순서상 앞뒤가 정의되지 않으므로 -1을 돌려 경계에서 멈추게 한다.
+function currentVisitPos(list){
+  const P=PLAYER; if(!P || P.current==null) return -1;
+  return list.findIndex(i=>P.hl.trace[i].id===P.current);
+}
+// 돌고 있던 타이머(단일 노드 애니메이션·자동재생)를 정리한 뒤 그 케이스 시점으로 재구성한다.
+// 타이머를 남겨 두면 새 subData를 물고 계속 돌아 버린다.
+function gotoVisit(idx, atEnd){
+  const P=PLAYER;
+  if(P.timer){ clearInterval(P.timer); P.timer=null; }
+  P.autoplaying=false;
+  P.i=idx; reconstruct(idx);
+  if(P.subData) P.subData.t = atEnd ? P.subData.H : 0;
+  render();
+}
+// ▶ 다음: 에이전트 시간(t)을 한 칸 전진한다. 이미 그 케이스의 끝(H)이면 한 번 더 누를 때
+// 다음 케이스의 시작(t=0)으로 넘어간다. 마지막 케이스의 끝에서는 멈춘다(no-op).
+function stepForward(){
+  const P=PLAYER; if(!P||!P.subData) return;
+  if(P.subData.t < P.subData.H){ P.subData.t++; render(); return; }
+  const list=visitIdxList(), pos=currentVisitPos(list);
+  if(pos>=0 && pos+1<list.length) gotoVisit(list[pos+1], false);
+}
+// ◀ 이전: 시간(t)을 한 칸 후진한다. 이미 그 케이스의 처음(0)이면 한 번 더 누를 때 앞 케이스의
+// 끝(t=H)으로 되돌아간다(▶의 역동작). 첫 케이스의 처음에서는 멈춘다(no-op).
+function stepBack(){
+  const P=PLAYER; if(!P||!P.subData) return;
+  if(P.subData.t > 0){ P.subData.t--; render(); return; }
+  const list=visitIdxList(), pos=currentVisitPos(list);
+  if(pos>0) gotoVisit(list[pos-1], true);
+}
+// R 키: 루트 노드를 다시 클릭한 것처럼 선택해(요구사항 7) t=0부터 재생한다(로드 직후와 동일 상태).
+function resetPlayback(){
+  const P=PLAYER; if(!P) return;
+  if(P.timer){ clearInterval(P.timer); P.timer=null; } // 자동재생 중이면 함께 정지
+  const rootVisit = P.hl.trace.find(e=>e.type==='visit');
+  if(rootVisit) onIctNodeClick(rootVisit.id, {play:false});
+}
+// 자동재생은 토글이므로 켜져 있는지가 버튼에 보여야 한다(예전엔 스텝 버튼과 생김새가 같아
+// 켠 줄 모르고 다시 누르는 일이 생겼다). P.autoplaying이 바뀌는 자리마다 함께 부른다.
+function syncAutoBtn(){
+  const b=document.getElementById('bAuto'); if(!b) return;
+  b.setAttribute('aria-pressed', (PLAYER && PLAYER.autoplaying) ? 'true' : 'false');
+}
+function render(){
+  const P=PLAYER; if(!P) return;
+  syncAutoBtn();
+  if(P.hl.status==='capExceeded') setCapWarning(CAP_EXCEEDED_MSG); else clearCapWarning();
+  renderICT(P.hl.nodes, P.revealed, P.current, P.visitedSoFar);
+  if(P.subData && P.subData.asg.length){
+    const t=P.subData.t;
+    // 방어: asg/agents 개수가 어긋나도(향후 다른 경로에서 재발하더라도) 던지지 않는다.
+    // 해당 에이전트의 경로가 없으면 출발 노드로 대체해 렌더를 계속 진행한다.
+    const agentsAt = P.scn.agents.map((a,i)=>{
+      const path=P.subData.asg[i];
+      return path ? path[Math.min(t,path.length-1)] : a.start;
+    });
+    const conflict=P.subData.conflict;
+    renderGridScene(CURRENT, {agentsAt, conflict, atConflictTime: conflict ? t>=conflict.t : false});
+    renderTimetable(P.scn, P.subData.asg, conflict, t);
+  } else { renderGridScene(CURRENT, {}); }
+  renderCandBar();
+}
+
+/* ---------- Task 13: 무실행 노드 3-B 후보 순회 ---------- */
+const CAND_CAP=12;
+function currentCandidates(){
+  const P=PLAYER; if(!P||!P.subData||P.subData.feasible) return null;
+  if(!P.subData._cand) P.subData._cand = lowLevelCandidates(P.scn, P.subData.costVec, CAND_CAP);
+  return P.subData._cand;
+}
+function renderCandBar(){
+  const el=document.getElementById('candBar'); if(!el) return;
+  const P=PLAYER;
+  const tog=document.getElementById('tog3b');
+  if(!P || !P.subData || P.subData.feasible || !tog || !tog.checked){ el.innerHTML=''; return; }
+  const cand=currentCandidates();
+  if(!cand || cand.count<=1 || cand.samples.length<cand.count){ el.innerHTML=''; return; } // count===1 => 3-A로 충분, count>cap => 비노출
+  el.innerHTML = `<div class="candbar">
+    <button id="candPrev">◀</button>
+    <span>배정 ${P.subData.k+1}/${cand.count}</span>
+    <button id="candNext">▶</button>
+    <span class="badge-bad">${cand.count}가지 배정 모두 충돌</span>
+  </div>`;
+  document.getElementById('candPrev').onclick=()=>cycleCand(-1);
+  document.getElementById('candNext').onclick=()=>cycleCand(1);
+}
+function cycleCand(delta){
+  const P=PLAYER; const cand=currentCandidates(); if(!cand) return;
+  P.subData.k = (P.subData.k + delta + cand.count) % cand.count;
+  const s = cand.samples[P.subData.k];
+  P.subData.asg = s.asg; P.subData.conflict = s.conflict;
+  render();
+}
+// playNodeAnimation: 현재 subData.t를 0에서 H까지 타이머로 한 칸씩 진행하고 H에서 멈춘다
+// (다음 트레이스 이벤트로는 넘어가지 않는다). autoplay와 같은 tick 간격(TICK_MS)을 쓴다.
+function playNodeAnimation(){
+  const P=PLAYER; if(!P || !P.subData) return;
+  if(P.timer){ clearInterval(P.timer); P.timer=null; } // 실행 중이던 자동재생/노드애니메이션과 충돌 방지
+  if(P.subData.t>=P.subData.H) return;
+  P.timer=setInterval(()=>{
+    if(!P.subData || P.subData.t>=P.subData.H){ clearInterval(P.timer); P.timer=null; return; }
+    P.subData.t++; render();
+    if(P.subData.t>=P.subData.H){ clearInterval(P.timer); P.timer=null; }
+  },TICK_MS);
+}
+// 트레이스에 visit 기록이 없는 노드 클릭 대비: highLevel()은 해를 찾으면 즉시 멈추므로, 확장은 됐지만
+// 실제로 처리(저수준 탐색)되지는 않은 프론티어 노드가 P.hl.nodes에 남을 수 있다(TASK5/13 확정 예시에서도
+// 실측됨). 그런 노드도 "각자 클릭 가능"해야 하므로, 탐색이 끝난 시점까지 재구성한 뒤 그 노드와 조상
+// 체인을 visitedSoFar에 얹고 lowLevel을 즉석 계산해 진짜 색(충돌/해)이 드러나게 한다.
+function selectUnvisitedTreeNode(id){
+  const P=PLAYER;
+  reconstruct(P.hl.trace.length-1);
+  const byId=new Map(P.hl.nodes.map(n=>[n.id,n]));
+  const rec=byId.get(id); if(!rec) return;
+  for(let n=rec; n; n=n.parentId?byId.get(n.parentId):null) P.visitedSoFar.add(n.id);
+  const low=lowLevel(P.scn, rec.costVec);
+  rec.state = low.feasible ? 'solution' : 'conflict'; // 진짜 판정을 노드에 기록(다음 렌더부터 반영)
+  const asg = low.feasible ? low.plan : (low.sample||[]);
+  P.current=rec.id;
+  P.subData={asg, conflict: low.feasible?null:low.conflict,
+    H: asg.length? Math.max(...asg.map(p=>p.length))-1:0,
+    t:0, feasible: low.feasible, costVec: rec.costVec, k:0, _cand:null};
+}
+window.onIctNodeClick=function(id, opts){ // 선택 + t=0 (opts.play===false면 재생하지 않고 정지)
+  const P=PLAYER; if(!P) return;
+  const play = !(opts && opts.play===false);
+  if(P.timer){ clearInterval(P.timer); P.timer=null; } P.autoplaying=false; // 실행 중이던 자동재생/노드애니메이션과 충돌 방지
+  const idx=P.hl.trace.findIndex(e=>e.type==='visit'&&e.id===id);
+  if(idx>=0){
+    P.i=idx; reconstruct(idx); // 방문된 노드: 탐색 순서대로 그 시점까지 visitedSoFar를 누적한다
+  } else {
+    selectUnvisitedTreeNode(id); // 트레이스엔 없지만 트리에는 있는 노드(위 주석 참조)
+  }
+  if(P.subData) P.subData.t=0; // 끝(H)이 아니라 처음(0)부터
+  render();
+  if(play) playNodeAnimation();
+};
+// 자동(space): 트레이스의 visit 노드를 탐색 순서대로 차례차례 선택하며 각 노드를 t=0→H로 재생한다
+// (요구사항 6). stepForward를 재사용하지 않는다(그건 이제 시간만 바꾸고 노드를 바꾸지 않으므로).
+// 해(solution) 노드의 애니메이션이 끝나면 정지한다. 다시 누르면(토글) 즉시 취소된다.
+function autoplay(){
+  const P=PLAYER; if(!P) return;
+  // P.timer는 단일 노드 애니메이션(playNodeAnimation)에도 쓰이므로, "자동재생 자체가 실행 중"인지는
+  // 별도 플래그 P.autoplaying으로 구분한다(그래야 노드 클릭/로드 직후 애니메이션이 도는 중에 자동을
+  // 눌러도 그 애니메이션만 멎는 게 아니라 전체 순회가 새로 시작된다).
+  if(P.autoplaying){ clearInterval(P.timer); P.timer=null; P.autoplaying=false; syncAutoBtn(); return; } // 토글로 정지
+  if(P.timer){ clearInterval(P.timer); P.timer=null; } // 돌고 있던 단일 노드 애니메이션은 정리하고 이어받는다
+  const visitIdxs=[]; P.hl.trace.forEach((e,i)=>{ if(e.type==='visit') visitIdxs.push(i); });
+  if(!visitIdxs.length) return;
+  let vi=0;
+  const gotoNode=(k)=>{ P.i=visitIdxs[k]; reconstruct(visitIdxs[k]); if(P.subData) P.subData.t=0; render(); };
+  P.autoplaying=true;
+  gotoNode(vi);
+  P.timer=setInterval(()=>{
+    if(P.subData && P.subData.t < P.subData.H){ P.subData.t++; render(); return; }
+    vi++;
+    if(vi>=visitIdxs.length){ clearInterval(P.timer); P.timer=null; P.autoplaying=false; syncAutoBtn(); return; }
+    gotoNode(vi);
+  },TICK_MS);
+}
+/* ---------- 컨트롤 레일 마크업 — 성격별 3섹션(재생 / 문제 / 에이전트) ----------
+   재생 = 발표 중 계속 누르는 것, 문제 = 수업 전 준비하는 것. 사용 빈도 순으로 위에서 아래.
+   편집 전용 컨트롤(가로·세로·크기 적용·벽 지우기)은 #editOnly로 묶어 편집 모드에서만 보인다. */
+document.getElementById('playControls').innerHTML =
+  `<h2 class="railhead">재생</h2>
+   <div class="stepbar"><button id="bBack">◀ 이전</button><button id="bStep">▶ 다음</button></div>
+   <div class="ctlrow"><button id="bAuto" aria-pressed="false">자동</button>
+     <label><input type="checkbox" id="tog3b"> 후보 배정 순회(3-B)</label></div>`;
+document.getElementById('playControls').className='ctlsec';
+document.getElementById('problemControls').innerHTML =
+  `<h2 class="railhead">문제</h2>
+   <div class="ctlrow"><select id="preset"></select></div>
+   <div class="ctlrow"><button id="bGridEdit">격자 편집</button></div>
+   <div id="editOnly">
+     <div class="ctlrow">
+       <label>가로 <input id="inCols" type="number" min="2" max="14" value="5" disabled></label>
+       <label>세로 <input id="inRows" type="number" min="2" max="14" value="2" disabled></label>
+     </div>
+     <div class="ctlrow"><button id="bApplySize" disabled>크기 적용</button>
+       <button id="bClearWalls" disabled>벽 지우기</button></div>
+   </div>`;
+document.getElementById('problemControls').className='ctlsec';
+document.getElementById('bStep').onclick=stepForward;
+document.getElementById('bBack').onclick=stepBack;
+document.getElementById('bAuto').onclick=autoplay;
+document.getElementById('tog3b').onchange=render;
+window.addEventListener('keydown',e=>{ if(EDIT_MODE) return;
+  if(e.key==='ArrowRight')stepForward();
+  else if(e.key==='ArrowLeft')stepBack();
+  else if(e.key===' '){e.preventDefault();autoplay();}
+  else if(e.key==='r'||e.key==='R')resetPlayback(); });
+
+/* ---------- Task 12: 프리셋 드롭다운 + 두 오라클 프리셋(격자 정의)을 로드 ---------- */
+// 아래 두 격자 리터럴은 slide/tools/test/icts/scenarios.mjs 의 SCEN_GRID2x5 / SCEN_LINEBRANCH 와
+// gridToScenario로 파생했을 때 노드·간선이 동일한 격자 표현(오프라인 단일 파일이라 import 불가).
+const GRID_2x5 = {
+  cols:5, rows:2,
+  walls: new Set(['0,1','1,1','3,1','4,1']),
+  labels: {},
+  agents: [
+    {start:[0,0], goal:[4,0], color:'#2f6fed'},
+    {start:[1,0], goal:[3,0], color:'#e0533d'},
+  ],
+};
+const GRID_LINEBRANCH = {
+  cols:4, rows:3,
+  walls: new Set(['0,0','1,0','2,0','3,0','0,2','2,2','3,2']), // 열린 칸(0,1)(1,1)(2,1)(3,1)(1,2) 외 전부 벽
+  labels: {'0,1':'A','1,1':'B','2,1':'C','3,1':'D','1,2':'E'},
+  agents: [
+    {start:[0,1], goal:[3,1], color:'#2f6fed'},
+    {start:[1,1], goal:[2,1], color:'#e0533d'},
+  ],
+};
+const EXAMPLES = [
+  {name:'2×5 쉬운 문제(대피선)', grid: GRID_2x5},
+  {name:'확정 예시 A-B-C-D+E',   grid: GRID_LINEBRANCH},
+];
+
+/* ---------- 편집 공용 전역(격자 모델) ---------- */
+// CURRENT: 마지막으로 커밋된 유효한 격자 모델. DRAFT: 편집 중 작업 사본(격자 편집 모드에서만 존재).
+// 편집은 항상 DRAFT를 변형하고, EXAMPLES 리터럴은 절대 변형하지 않는다. "편집 완료" 시점에만
+// gridToScenario(DRAFT)의 유효성(scenarioReachable)을 검증해 통과해야 CURRENT=DRAFT로 커밋한다
+// (무효면 DRAFT를 유지한 채 경고만 띄우고 편집 모드에 남는다 — CURRENT/PLAYER.scn은 항상 일치).
+const PALETTE=['#2f6fed','#e0533d','#2ca05a'];
+let EDIT_MODE=false;
+let CURRENT=null;
+let DRAFT=null;
+function cloneGrid(g){
+  return {
+    cols:g.cols, rows:g.rows,
+    walls:new Set(g.walls),
+    labels:Object.assign({}, g.labels),
+    agents:g.agents.map(a=>({start:[a.start[0],a.start[1]], goal:[a.goal[0],a.goal[1]], color:a.color})),
+  };
+}
+function eqXY(a,b){ return a[0]===b[0] && a[1]===b[1]; }
+
+/* ---------- Task 14: 격자 편집(형제 뷰어 idiom 계승 — 벽 드래그 칠하기/지우기, sticky-drag 가드) ---------- */
+// DRAG.editing=true 면 편집 모드(DRAFT)에서의 드래그(마커 이동 또는 벽 칠하기), false 면 일반(재생)
+// 모드에서 CURRENT 위 마커를 직접 드래그하는 중(벽 칠하기는 없음). snapshot/touched는 일반 모드
+// 마커 드래그에서만 쓰며, onUp에서 원위치 복귀·재생 화면 복구 판단에 쓴다.
+const DRAG={active:false, type:null, agentIdx:null, paint:null, editing:null, snapshot:null, touched:false};
+function cellFromEvent(e){
+  const c=e.target.closest('.gcell'); if(!c) return null;
+  return [ +c.dataset.x, +c.dataset.y ];
+}
+function findMarker(grid,x,y){
+  for(let i=0;i<grid.agents.length;i++) if(eqXY(grid.agents[i].start,[x,y])) return {kind:'start', idx:i};
+  for(let i=0;i<grid.agents.length;i++) if(eqXY(grid.agents[i].goal,[x,y])) return {kind:'goal', idx:i};
+  return null;
+}
+function applyPaint(grid,x,y){
+  if(findMarker(grid,x,y)) return; // 출발/목표 칸엔 벽을 칠하지 않는다
+  const key=x+','+y;
+  if(DRAG.paint==='draw') grid.walls.add(key); else grid.walls.delete(key);
+}
+function markDragCursor(on){
+  const el=document.getElementById('grid'); if(el) el.classList.toggle('dragging-marker', on);
+}
+function onDown(e){
+  const p=cellFromEvent(e); if(!p) return;
+  if(EDIT_MODE){
+    e.preventDefault();
+    DRAG.active=true; DRAG.editing=true;
+    const m=findMarker(DRAFT,p[0],p[1]);
+    if(m){ DRAG.type=m.kind; DRAG.agentIdx=m.idx; markDragCursor(true); }
+    else { DRAG.type='paint'; DRAG.paint=DRAFT.walls.has(p.join(','))?'erase':'draw'; applyPaint(DRAFT,p[0],p[1]); renderEditGrid(); }
+    return;
+  }
+  // 일반(재생) 모드: 벽 칠하기는 없다. 마커가 있는 칸에서만 드래그를 시작한다(격자 편집 없이도 S/G 이동).
+  const m=findMarker(CURRENT,p[0],p[1]);
+  if(!m) return;
+  e.preventDefault();
+  DRAG.active=true; DRAG.editing=false; DRAG.type=m.kind; DRAG.agentIdx=m.idx;
+  DRAG.snapshot=[CURRENT.agents[m.idx][m.kind][0], CURRENT.agents[m.idx][m.kind][1]];
+  DRAG.touched=false;
+  markDragCursor(true);
+}
+function onOver(e){
+  if(!DRAG.active) return;
+  if(e.buttons===0){ onUp(); return; } // 버튼을 뗐으면 드래그 종료(sticky-drag 가드)
+  const p=cellFromEvent(e); if(!p) return;
+  const key=p.join(',');
+  if(DRAG.editing){
+    if(!EDIT_MODE) return;
+    if(DRAG.type==='start' || DRAG.type==='goal'){
+      if(DRAFT.walls.has(key)) return; // 벽 위로는 옮기지 않는다
+      DRAFT.agents[DRAG.agentIdx][DRAG.type]=p;
+      renderEditGrid();
+    } else if(DRAG.type==='paint'){
+      applyPaint(DRAFT,p[0],p[1]); renderEditGrid();
+    }
+    return;
+  }
+  // 일반(재생) 모드 마커 드래그: CURRENT를 직접 옮기고 마커만 가볍게 다시 그린다(엔진 재실행은 onUp 커밋 시점에).
+  if(CURRENT.walls.has(key)) return; // 벽 칸으로는 옮기지 않는다
+  const occupied = CURRENT.agents.some((a,i)=> i!==DRAG.agentIdx && eqXY(a[DRAG.type], p));
+  if(occupied) return; // 같은 종류(출발/목표) 마커가 이미 있는 칸은 피한다
+  CURRENT.agents[DRAG.agentIdx][DRAG.type]=p;
+  DRAG.touched=true;
+  renderGridScene(CURRENT, {});
+}
+function onUp(){
+  if(DRAG.active && !DRAG.editing){
+    const moved = DRAG.snapshot && !eqXY(CURRENT.agents[DRAG.agentIdx][DRAG.type], DRAG.snapshot);
+    if(moved){
+      const scn=gridToScenario(CURRENT);
+      const chk=scenarioReachable(scn);
+      if(chk.ok){ loadScenario(scn); } // 커밋: 새 문제로 엔진을 다시 돌린다
+      else {
+        CURRENT.agents[DRAG.agentIdx][DRAG.type]=DRAG.snapshot; // 되돌리기
+        setWarning(UNREACHABLE_MSG);
+        render();
+      }
+    } else if(DRAG.touched){ render(); } // 드래그했다 원위치로 되돌아온 경우 재생 화면(로봇 등)을 복구
+  }
+  markDragCursor(false);
+  DRAG.active=false; DRAG.type=null; DRAG.agentIdx=null; DRAG.paint=null;
+  DRAG.editing=null; DRAG.snapshot=null; DRAG.touched=false;
+}
+function applyGridSize(){
+  if(!EDIT_MODE) return;
+  const cols=Math.max(2, Math.min(14, parseInt(document.getElementById('inCols').value)||DRAFT.cols));
+  const rows=Math.max(2, Math.min(14, parseInt(document.getElementById('inRows').value)||DRAFT.rows));
+  DRAFT.cols=cols; DRAFT.rows=rows;
+  document.getElementById('inCols').value=cols; document.getElementById('inRows').value=rows;
+  for(const k of [...DRAFT.walls]){ const [x,y]=k.split(',').map(Number); if(x>=cols||y>=rows) DRAFT.walls.delete(k); }
+  for(const k of Object.keys(DRAFT.labels)){ const [x,y]=k.split(',').map(Number); if(x>=cols||y>=rows) delete DRAFT.labels[k]; }
+  DRAFT.agents.forEach(a=>{
+    a.start=[Math.min(a.start[0],cols-1), Math.min(a.start[1],rows-1)];
+    a.goal =[Math.min(a.goal[0], cols-1), Math.min(a.goal[1], rows-1)];
+  });
+  renderEditGrid();
+}
+function clearWallsDraft(){ if(!EDIT_MODE) return; DRAFT.walls.clear(); renderEditGrid(); }
+function enterEdit(){
+  EDIT_MODE=true; DRAFT=cloneGrid(CURRENT);
+  const b=document.getElementById('bGridEdit'); if(b) b.textContent='편집 완료';
+  document.getElementById('inCols').value=DRAFT.cols;
+  document.getElementById('inRows').value=DRAFT.rows;
+  syncModeUI();
+  renderEditGrid();
+  renderAgentEditor();
+}
+// 편집 모드를 벗어나기 전 DRAFT에서 파생한 시나리오의 유효성을 먼저 검증한다. 무효면 편집
+// 모드를 유지한 채 경고만 띄우고, DRAFT는 그대로 남아 사용자가 계속 고칠 수 있다.
+function exitEdit(){
+  const scn=gridToScenario(DRAFT);
+  const chk=scenarioReachable(scn);
+  if(!chk.ok){ setWarning(UNREACHABLE_MSG); return; }
+  CURRENT=DRAFT; DRAFT=null; EDIT_MODE=false;
+  const b=document.getElementById('bGridEdit'); if(b) b.textContent='격자 편집';
+  syncModeUI();
+  loadScenario(gridToScenario(CURRENT));
+  renderAgentEditor();
+}
+function syncModeUI(){
+  document.getElementById('app').dataset.editing = EDIT_MODE ? '1' : '0';
+  ['bStep','bBack','bAuto','preset','tog3b'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled=EDIT_MODE; });
+  ['inCols','inRows','bApplySize','bClearWalls'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled=!EDIT_MODE; });
+}
+
+/* ---------- Task 15: 에이전트 편집(격자 위에서 출발·목표 마커를 직접 드래그, 상한 3·최소 1) ---------- */
+function addAgentDraft(){
+  if(!EDIT_MODE || DRAFT.agents.length>=3) return; // 로봇 상한 3
+  const color=PALETTE[DRAFT.agents.length % PALETTE.length];
+  const used=new Set(DRAFT.agents.flatMap(a=>[a.start.join(','), a.goal.join(',')]));
+  const openCells=[];
+  for(let y=0;y<DRAFT.rows;y++) for(let x=0;x<DRAFT.cols;x++){
+    const k=x+','+y; if(!DRAFT.walls.has(k) && !used.has(k)) openCells.push([x,y]);
+  }
+  if(!openCells.length) return; // 빈 칸이 없으면 추가 불가
+  const start=openCells[0];
+  const goal=openCells.find(c=>c.join(',')!==start.join(',')) ?? start;
+  DRAFT.agents.push({start, goal, color});
+  renderEditGrid(); renderAgentEditor();
+}
+function delAgentDraft(idx){
+  if(!EDIT_MODE || DRAFT.agents.length<=1) return; // 로봇 최소 1대 유지
+  DRAFT.agents.splice(idx,1);
+  renderEditGrid(); renderAgentEditor();
+}
+function renderAgentEditor(){
+  const el=document.getElementById('agentEditor'); if(!el) return;
+  const g = EDIT_MODE ? DRAFT : CURRENT;
+  const delDisabled = (!EDIT_MODE || g.agents.length<=1) ? 'disabled' : '';
+  const addDisabled = (!EDIT_MODE || g.agents.length>=3) ? 'disabled' : '';
+  const rows = g.agents.map((a,i)=>`
+    <div class="agent-row">
+      <span class="dot" style="background:${a.color}"></span>
+      <span class="aid">a${i+1}</span>
+      <span class="aslot">출발 (${a.start.join(',')})</span>
+      <span class="aslot">목표 (${a.goal.join(',')})</span>
+      <button data-act="del" data-idx="${i}" ${delDisabled}>삭제</button>
+    </div>`).join('');
+  const hint = EDIT_MODE ? `<div class="pending-hint">격자에서 출발(●)·목표(고리) 마커를 드래그해 옮기세요</div>` : '';
+  el.innerHTML = `<h2 class="railhead">에이전트</h2>${hint}${rows}
+    <button id="bAddAgent" ${addDisabled}>로봇 추가</button>`;
+  el.querySelectorAll('button[data-act="del"]').forEach(btn=>{
+    btn.onclick=()=>{ if(!btn.disabled) delAgentDraft(+btn.dataset.idx); };
+  });
+  const addBtn=document.getElementById('bAddAgent');
+  if(addBtn) addBtn.onclick=addAgentDraft;
+}
+
+// 프리셋 <select>는 「문제」 섹션 마크업에 이미 자리를 잡아 두었다(여기선 항목만 채운다).
+function renderPresetPicker(){
+  const sel=document.getElementById('preset'); if(!sel) return;
+  EXAMPLES.forEach((e,i)=>sel.add(new Option(e.name,i)));
+  sel.onchange=()=>{
+    CURRENT=cloneGrid(EXAMPLES[+sel.value].grid);
+    loadScenario(gridToScenario(CURRENT));
+    renderAgentEditor();
+  };
+}
+renderPresetPicker();
+document.getElementById('bGridEdit').onclick=()=> EDIT_MODE ? exitEdit() : enterEdit();
+document.getElementById('bApplySize').onclick=applyGridSize;
+document.getElementById('bClearWalls').onclick=clearWallsDraft;
+document.getElementById('inCols').addEventListener('keydown', e=>{ if(e.key==='Enter') applyGridSize(); });
+document.getElementById('inRows').addEventListener('keydown', e=>{ if(e.key==='Enter') applyGridSize(); });
+const gridEl=document.getElementById('grid');
+gridEl.addEventListener('mousedown', onDown);
+gridEl.addEventListener('mouseover', onOver);
+document.addEventListener('mouseup', onUp);
+
+/* ---------- 칸 크기 조절(손잡이 드래그) — 세로 손잡이 2개 + 가로 손잡이 1개 ----------
+   크기는 CSS 변수로만 바꾸고 나머지 칸은 1fr로 남는 자리를 먹는다. 실제 크기는
+   getComputedStyle을 읽지 않고 SIZE에 들고 있는다(헤드리스 스텁 DOM에서도 그대로 돈다).
+   `def:null`(시간표)은 "기본이 내용 높이(auto)"라는 뜻 — 손대기 전까진 변수를 아예 안 박는다. */
+const SPLITTERS={
+  rail : {host:'app',      varName:'--railW',  axis:'x', sign:+1, min:200, max:560, def:260},
+  right: {host:'app',      varName:'--rightW', axis:'x', sign:-1, min:260, max:820, def:380},
+  tt   : {host:'rightCol', varName:'--ttH',    axis:'y', sign:-1, min:90,  max:640, def:null},
+};
+const SIZE={rail:260, right:380, tt:null};
+const CENTER_MIN=260; // 격자가 들어갈 가운데 열의 최소 폭
+const ICT_MIN=160;    // 시간표를 키워도 트리에 남겨 둘 최소 높이
+function roomFor(key){
+  if(key==='tt'){
+    const col=document.getElementById('rightCol'), cb=document.getElementById('candBar');
+    return ((col&&col.clientHeight)||760) - ((cb&&cb.offsetHeight)||0) - 6 - ICT_MIN;
+  }
+  // 반대쪽 열과 손잡이 폭(6*2)을 빼고 남는 것에서 가운데 최소폭을 지킨다.
+  return (window.innerWidth||1440) - SIZE[key==='rail'?'right':'rail'] - 12 - CENTER_MIN;
+}
+function setSplit(key, px){
+  const s=SPLITTERS[key];
+  SIZE[key]=Math.round(Math.max(s.min, Math.min(Math.min(s.max, roomFor(key)), px)));
+  const host=document.getElementById(s.host);
+  if(host && host.style) host.style.setProperty(s.varName, SIZE[key]+'px');
+}
+// 지금 픽셀 크기(아직 한 번도 안 끈 auto 칸은 실측해서 시작점으로 삼는다).
+function measureSplit(key){
+  if(SIZE[key]!=null) return SIZE[key];
+  const el=document.getElementById('timetablePane');
+  return el && el.getBoundingClientRect ? Math.round(el.getBoundingClientRect().height) : 200;
+}
+function resetSplit(key){
+  const s=SPLITTERS[key];
+  if(s.def!=null){ setSplit(key, s.def); return; }
+  SIZE[key]=null; // auto로 되돌리기 = 변수를 지운다
+  const host=document.getElementById(s.host);
+  if(host && host.style && host.style.removeProperty) host.style.removeProperty(s.varName);
+}
+// 열 폭이 바뀌면 격자 칸을 다시 잡아야 한다(sizeGridCells가 graphPane 실측을 쓴다).
+// ICT·시간표는 원래 크기로 그리고 스크롤하므로 다시 그릴 필요가 없다(가로 손잡이는 refit 불필요).
+// 드래그 중엔 프레임당 한 번으로 묶어 165노드짜리 큰 트리에서도 끊기지 않게 한다.
+let refitPending=false;
+function refitPanes(){
+  if(refitPending) return; refitPending=true;
+  const run=()=>{ refitPending=false; if(EDIT_MODE) renderEditGrid(); else if(PLAYER) render(); };
+  if(typeof requestAnimationFrame==='function') requestAnimationFrame(run); else run();
+}
+let SPLIT=null;
+document.addEventListener('mousedown', e=>{
+  const el=e.target.closest && e.target.closest('.splitter'); if(!el) return;
+  const key=el.dataset.split, s=SPLITTERS[key]; if(!s) return;
+  e.preventDefault();
+  SPLIT={key, s, p0:(s.axis==='x'?e.clientX:e.clientY), w0:measureSplit(key), el};
+  el.classList.add('dragging');
+  document.body.classList.add(s.axis==='x' ? 'col-resizing' : 'row-resizing');
+});
+document.addEventListener('mousemove', e=>{
+  if(!SPLIT) return;
+  if(e.buttons===0){ endSplit(); return; } // sticky-drag 가드(형제 뷰어 관용구)
+  const p=(SPLIT.s.axis==='x'?e.clientX:e.clientY);
+  setSplit(SPLIT.key, SPLIT.w0 + SPLIT.s.sign*(p-SPLIT.p0)); // sign = 끄는 방향과 크기 증감의 부호
+  if(SPLIT.s.axis==='x') refitPanes();
+});
+function endSplit(){
+  if(!SPLIT) return;
+  SPLIT.el.classList.remove('dragging');
+  document.body.classList.remove('col-resizing'); document.body.classList.remove('row-resizing');
+  const axis=SPLIT.s.axis; SPLIT=null;
+  if(axis==='x') refitPanes();
+}
+document.addEventListener('mouseup', endSplit);
+// 더블클릭 = 그 칸만 기본값으로(시간표는 '내용 높이'로)
+document.addEventListener('dblclick', e=>{
+  const el=e.target.closest && e.target.closest('.splitter'); if(!el || !SPLITTERS[el.dataset.split]) return;
+  resetSplit(el.dataset.split);
+  if(SPLITTERS[el.dataset.split].axis==='x') refitPanes();
+});
+// 창 크기가 바뀌어도 격자를 다시 맞춘다(형제 BFS 뷰어엔 있고 ICTS엔 빠져 있던 관용구).
+// 창이 줄면 roomFor 계산이 열 폭·시간표 높이를 자동으로 깎아 가운데와 트리를 지킨다.
+window.addEventListener('resize', ()=>{
+  setSplit('rail', SIZE.rail); setSplit('right', SIZE.right);
+  if(SIZE.tt!=null) setSplit('tt', SIZE.tt);
+  refitPanes();
+});
+setSplit('rail', SIZE.rail); setSplit('right', SIZE.right);
+
+CURRENT = cloneGrid(EXAMPLES[0].grid); // 기본 = 2×5
+loadScenario(gridToScenario(CURRENT));
+renderAgentEditor();
+syncModeUI();
+
+/* 로드 시 self-test (window.__SELFTEST 훅 재사용).
+   결과는 콘솔로만 알린다 — 수업 화면에 뱃지를 띄우지 않는다. */
+(function(){
+  let ok = true;
+  try{
+    for(const ex of EXAMPLES){ const hl = window.__SELFTEST(gridToScenario(ex.grid)); if(!hl || !hl.solution) ok=false; }
+  }catch(err){ ok=false; console.error(err); }
+  if(ok) console.log('SELFTEST PASS'); else console.error('SELFTEST FAIL');
+})();
+
+/* ---------- Task 16: 인페이지 self-test 스위트 ---------- */
+// gridToScenario(EXAMPLES[i].grid)로 파생한 시나리오에서 엔진을 돌려 확인한다. 콘솔에 PASS/FAIL 한 줄씩 출력.
+// EXAMPLES[0]=grid2x5, EXAMPLES[1]=linebranch(확정 예시). ?selftest=1 이면 로드 시 자동 실행.
+function runSelfTests(){
+  const T=[];
+  const eq=(a,b,m)=>T.push((JSON.stringify(a)===JSON.stringify(b)?'PASS':'FAIL')+' '+m);
+  const scnGrid2x5 = gridToScenario(EXAMPLES[0].grid);
+  const scnLinebranch = gridToScenario(EXAMPLES[1].grid);
+  eq(highLevel(scnLinebranch).trace.filter(e=>e.type==='visit').map(e=>e.costVec),
+     [[3,1],[3,2],[4,1],[3,3]], 'linebranch 방문열');
+  eq(highLevel(scnGrid2x5).solution.total, 8, 'grid2x5 해 총8');
+  const s=highLevel(scnLinebranch).solution;
+  eq(firstConflict(s.plan[0],s.plan[1]), null, '해 무충돌');
+  T.forEach(l=>console.log(l));
+  return T.every(l=>l.startsWith('PASS'));
+}
+if(new URLSearchParams(location.search).get('selftest')) runSelfTests();
+</script>
+</body>
+</html>

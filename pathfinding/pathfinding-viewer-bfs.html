@@ -117,6 +117,7 @@
   #counter{ font-family:ui-monospace,"SF Mono","JetBrains Mono",monospace; font-size:14px;
     min-width:96px; text-align:center; color:var(--muted); }
   .spacer{ margin-left:auto; }
+
 </style>
 </head>
 <body>
@@ -602,7 +603,7 @@ function prev(){ goto(state.i-1); }
 let timer=null;
 function setPlayIcon(on){ $('btnPlay').textContent = on ? '⏸ 일시정지' : '▷ 재생'; }
 function startPlay(){ if(state.i>=state.trace.length-1) goto(0);
-  timer=setInterval(()=>{ if(state.i>=state.trace.length-1) stopPlay(); else next(); }, 1000);
+  timer=setInterval(()=>{ if(state.i>=state.trace.length-1) stopPlay(); else next(); }, 300);   // 0.3초/스텝
   setPlayIcon(true); }
 function stopPlay(){ if(timer){ clearInterval(timer); timer=null; } setPlayIcon(false); }
 function togglePlay(){ if(state.mode!=='play') return; timer? stopPlay() : startPlay(); }
@@ -632,7 +633,9 @@ function loadExample(idx){
 }
 
 // ===== INIT =====
-runSelfTest();
+// self-test는 그대로 돌리되 결과는 콘솔로만 알린다(수업 화면에 뱃지를 띄우지 않는다).
+if (runSelfTest()) console.log('SELFTEST PASS');
+else console.error('SELFTEST FAIL');
 
 // 예시 드롭다운 채우기
 $('selExample').innerHTML = EXAMPLES.map((e,i)=>`<option value="${i}">${e.name}</option>`).join('');

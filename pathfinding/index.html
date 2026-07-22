@@ -25,18 +25,31 @@
   .head{ text-align:center; margin-bottom:clamp(24px,5vh,48px); }
   .head .ko{ font-size:clamp(24px,4vw,32px); font-weight:700; letter-spacing:.01em; }
   .head .en{ color:var(--muted); font-size:14px; letter-spacing:.16em; text-transform:uppercase; margin-top:6px; }
+  /* 4칸을 한 줄에 나란히. 타일이 작아지는 대신 세로가 한 행으로 끝나
+     body의 overflow:hidden에 걸려 잘릴 일이 없다. */
   .tiles{
-    display:grid; gap:clamp(14px,2.4vw,22px);
-    grid-template-columns:repeat(3, minmax(0,1fr));
-    width:min(760px, 92vw);
+    display:grid; gap:clamp(12px,1.8vw,18px);
+    grid-template-columns:repeat(4, minmax(0,1fr));
+    width:min(760px, 94vw);
   }
   .tile{
     aspect-ratio:1 / 1;
-    display:flex; align-items:center; justify-content:center;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+    padding:12px; text-align:center;
     background:#fff; border:1px solid var(--line); border-radius:var(--radius);
     box-shadow:var(--shadow); text-decoration:none; color:var(--ink);
-    font-size:clamp(19px,2.4vw,25px); font-weight:700; letter-spacing:.01em;
+    font-size:clamp(16px,1.9vw,22px); font-weight:700; letter-spacing:.01em;
     transition:transform .14s ease, box-shadow .14s ease, border-color .14s ease, color .14s ease;
+  }
+  /* 줄임말 타일에만 붙는 풀네임(머리말의 한글/영문 두 줄 짜임을 그대로 따랐다) */
+  .tile .sub{
+    font-size:clamp(9px,0.85vw,11px); font-weight:600; line-height:1.35; letter-spacing:.03em;
+    color:var(--muted); text-transform:uppercase;
+  }
+  .tile:hover .sub{ color:inherit; }
+  /* 좁아지면 4열은 글자가 뭉개진다: 2×2 -> 1열로 단계적으로 접는다 */
+  @media (max-width:720px){
+    .tiles{ grid-template-columns:repeat(2, minmax(0,1fr)); width:min(440px, 92vw, 70vh); }
   }
   .tile:hover{
     transform:translateY(-4px); color:var(--accent); border-color:var(--accent);
@@ -58,6 +71,8 @@
     <a class="tile" href="./pathfinding-viewer-bfs.html">BFS</a>
     <a class="tile" href="./pathfinding-viewer-dijkstra.html">Dijkstra</a>
     <a class="tile" href="./pathfinding-viewer-astar.html">A*</a>
+    <a class="tile" href="./pathfinding-viewer-icts.html">ICTS
+      <span class="sub">Increasing Cost<br>Tree Search</span></a>
   </nav>
 </body>
 </html>
