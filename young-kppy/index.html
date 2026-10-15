@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Young KPPY — November 13, 2026, Kyungpook National University</title>
+<style>
+  :root {
+    --paper: #ffffff;
+    --ink: #14213d;
+    --navy: #1b3a6b;
+    --tint: #eef3fa;
+    --line: #c9d6e8;
+    --muted: #5a6a85;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Avenir Next", "Helvetica Neue", "Segoe UI", system-ui, sans-serif;
+    font-size: 17px;
+    line-height: 1.6;
+  }
+  .mono {
+    font-family: "SF Mono", "Menlo", "Consolas", ui-monospace, monospace;
+    font-size: 0.82em;
+    letter-spacing: 0.04em;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+
+  /* Header */
+  header { border-bottom: 3px solid var(--navy); padding: 72px 0 48px; }
+  .eyebrow {
+    color: var(--navy);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 20px;
+  }
+  h1 {
+    font-size: clamp(52px, 9vw, 96px);
+    line-height: 0.95;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  h1 .young {
+    display: block;
+    color: var(--paper);
+    -webkit-text-stroke: 2px var(--navy);
+    text-stroke: 2px var(--navy);
+  }
+  h1 .kppy { display: block; color: var(--navy); }
+  .datebox {
+    margin-top: 32px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 40px;
+    color: var(--ink);
+  }
+  .datebox div { display: flex; flex-direction: column; gap: 2px; }
+  .datebox .label {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--muted); font-weight: 600;
+  }
+  .datebox .value { font-weight: 600; line-height: 1.35; }
+
+  /* Sections */
+  section { padding: 56px 0; border-bottom: 1px solid var(--line); }
+  section:last-of-type { border-bottom: none; }
+  h2 {
+    color: var(--navy);
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+    margin-bottom: 24px;
+  }
+  p + p { margin-top: 1em; }
+  .about p { max-width: 640px; }
+
+  /* Program */
+  .program { width: 100%; border-collapse: collapse; }
+  .program th,
+  .program td {
+    text-align: left;
+    font-weight: 500;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+    vertical-align: baseline;
+  }
+  .program th {
+    width: 9.5em;
+    padding-right: 24px;
+    color: var(--navy);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .program td.tba { color: var(--muted); }
+  .program tr.pause th,
+  .program tr.pause td { color: var(--muted); font-weight: 500; }
+  .program-note { margin-top: 16px; color: var(--muted); font-size: 15px; }
+
+  /* Contact */
+  .contact a { color: var(--navy); font-weight: 600; text-decoration: none; border-bottom: 1.5px solid var(--navy); }
+  .contact a:focus-visible { outline: 2px solid var(--navy); outline-offset: 3px; }
+
+  footer {
+    background: var(--navy);
+    color: var(--tint);
+    padding: 28px 0;
+    font-size: 14px;
+  }
+
+  @media (max-width: 520px) {
+    header { padding: 48px 0 36px; }
+    section { padding: 40px 0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <p class="eyebrow">A young-researchers session of the 101st KPPY Workshop</p>
+    <h1><span class="young">Young</span><span class="kppy">KPPY</span></h1>
+    <div class="datebox mono">
+      <div><span class="label">Date</span><span class="value">November 13, 2026 (Friday)</span></div>
+      <div><span class="label">Venue</span><span class="value">B06, College of Natural Sciences<br>Kyungpook National University, Daegu</span></div>
+      <div><span class="label">Talks</span><span class="value">4 invited talks</span></div>
+    </div>
+  </div>
+</header>
+
+<section class="about">
+  <div class="wrap">
+    <h2>About</h2>
+    <p>Young KPPY is a session of the 101st KPPY Workshop devoted to talks by
+    early-career researchers. Four invited speakers will present their recent work.</p>
+    <p>Everyone is welcome to attend.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Program</h2>
+    <table class="program">
+      <tbody>
+        <tr>
+          <th scope="row" class="mono">14:00–14:45</th>
+          <td class="tba">To be announced</td>
+        </tr>
+        <tr class="pause">
+          <th scope="row" class="mono">14:45–14:55</th>
+          <td>Break</td>
+        </tr>
+        <tr>
+          <th scope="row" class="mono">14:55–15:40</th>
+          <td class="tba">To be announced</td>
+        </tr>
+        <tr class="pause">
+          <th scope="row" class="mono">15:40–15:50</th>
+          <td>Break</td>
+        </tr>
+        <tr>
+          <th scope="row" class="mono">15:50–16:35</th>
+          <td class="tba">To be announced</td>
+        </tr>
+        <tr class="pause">
+          <th scope="row" class="mono">16:35–16:45</th>
+          <td>Break</td>
+        </tr>
+        <tr>
+          <th scope="row" class="mono">16:45–17:30</th>
+          <td class="tba">To be announced</td>
+        </tr>
+        <tr>
+          <th scope="row" class="mono">18:00</th>
+          <td>Dinner</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="program-note">Each talk is 40 minutes plus 5 minutes for questions.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Venue</h2>
+    <p>B06, College of Natural Sciences,<br>
+    Kyungpook National University, Daegu, Korea.</p>
+  </div>
+</section>
+
+<section class="contact">
+  <div class="wrap">
+    <h2>Contact</h2>
+    <p>Questions about the session? Write to the organizer at
+    <a href="mailto:semin@knu.ac.kr">semin@knu.ac.kr</a>.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Young KPPY · November 13, 2026 · B06, College of Natural Sciences, Kyungpook National University
+  </div>
+</footer>
+
+</body>
+</html>
